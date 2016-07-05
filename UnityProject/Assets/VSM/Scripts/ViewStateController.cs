@@ -93,10 +93,13 @@ namespace Revenga.VSM
 
                     vsmManager.CurrentStateName = stateName;
 
+                    // Uncoment if you use NGUI
+                    /*
                     if (gameObject.GetComponent<UIWidget>() != null)
                     {
                         gameObject.GetComponent<UIWidget>().SetDirty();
                     }
+                    */
 
                     VsmList.ViewStateManagers[VsmList.ViewStateManagers.FindIndex(x => x.ManagerName == managerName)] = vsmManager;
                 }

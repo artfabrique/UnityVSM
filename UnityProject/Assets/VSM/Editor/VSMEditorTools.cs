@@ -69,56 +69,6 @@ namespace Revenga.VSM
             GUILayout.Space(3f);
         }
 
-
-        static public SerializedProperty DrawProperty(string label, SerializedObject serializedObject, string propertyName, bool padding, params GUILayoutOption[] options)
-        {
-            SerializedProperty serializedProperty = serializedObject.FindProperty(propertyName);
-
-            if (serializedProperty != null)
-            {
-                if (padding) EditorGUILayout.BeginHorizontal();
-
-                if (serializedProperty.isArray && serializedProperty.type != "string") DrawArray(serializedObject, propertyName, label ?? propertyName);
-                else if (label != null) EditorGUILayout.PropertyField(serializedProperty, new GUIContent(label), options);
-                else EditorGUILayout.PropertyField(serializedProperty, options);
-
-                if (padding)
-                {
-                    NGUIEditorTools.DrawPadding();
-                    EditorGUILayout.EndHorizontal();
-                }
-            }
-            else Debug.LogWarning("N " + propertyName+" not found!");
-            return serializedProperty;
-        }
-
-        /// <summary>
-        /// Helper function that draws an array property.
-        /// </summary>
-
-        static public void DrawArray(SerializedObject obj, string propertyName, string title)
-        {
-            SerializedProperty sp = obj.FindProperty(propertyName + ".Array.size");
-
-            if (sp != null && NGUIEditorTools.DrawHeader(title))
-            {
-                NGUIEditorTools.BeginContents();
-                int size = sp.intValue;
-                int newSize = EditorGUILayout.IntField("Size", size);
-                if (newSize != size) obj.FindProperty(propertyName + ".Array.size").intValue = newSize;
-
-                EditorGUI.indentLevel = 1;
-
-                for (int i = 0; i < newSize; i++)
-                {
-                    SerializedProperty p = obj.FindProperty(string.Format("{0}.Array.data[{1}]", propertyName, i));
-                    if (p != null) EditorGUILayout.PropertyField(p);
-                }
-                EditorGUI.indentLevel = 0;
-                NGUIEditorTools.EndContents();
-            }
-        }
-
         static public void SerializedListAdd(SerializedObject so, string propertyName, UnityEngine.Object obj)
         {
             if (so == null || string.IsNullOrEmpty(propertyName)) return;
