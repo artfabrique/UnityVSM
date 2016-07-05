@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UnityEditor;
 
 namespace Revenga.VSM
 {
@@ -144,7 +145,7 @@ namespace Revenga.VSM
                                 tmpTr = gameObject.transform.FindChild(property.P);
                                 if(tmpTr==null) continue;
 
-                                tmpType = Type.GetType(property.C);
+                                tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);//Type.GetType(property.C);
                                 if(tmpType==null) continue;
 
                                 if (tmpType == typeof (Transform))
@@ -157,13 +158,11 @@ namespace Revenga.VSM
                                     tmpC = tmpTr.gameObject.GetComponent(tmpType);
                                     if (tmpC == null) continue;
 
-                                    tmpFi = tmpC.GetType().GetField(property.N);
-                                    if (tmpFi == null || !tmpFi.IsPublic) continue;
+                                    var tmpSO = new SerializedObject(tmpC);
 
-                                    if (tmpFi.FieldType != typeof (float)) continue;
+                                    // DO SOMETHING NOW WE HAVE PROPERTY BINDING!
 
-                                    FloatBindings.Add(string.Concat(property.P, property.C, property.N),
-                                        (float) tmpFi.GetValue(tmpC));
+
                                 }
                                 break;
                         }

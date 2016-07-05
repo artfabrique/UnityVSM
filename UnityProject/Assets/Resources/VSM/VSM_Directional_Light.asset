@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7e1628cb1205424c9a6e31d40b60539, type: 3}
+  m_Name: VSM_Directional_Light
+  m_EditorClassIdentifier: 
+  ListName: VSM_Directional_Light
+  Data: '{"ViewStateManagers":[{"Id":"55dc4bd6-a00b-478c-b336-77a308b9f99f","ManagerName":"VSM_Directional_Light_1467720186","CurrentStateName":"","DefaultStateName":"State_1467720189","LayerIndex":1,"AnimationClipName":"VSM_Directional_Light_1467720186","States":[{"Id":"92c2411f-fb14-4112-829b-5d4793efc529","StateName":"State_1467720189","AnimationClipName":"VSM_Directional_Light_1467720186","Time":0.0,"Properties":[{"N":"m_LocalPosition","F":"x","P":"","V":0.26499998569488528,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Transform"},{"N":"m_LocalPosition","F":"y","P":"","V":3.0,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Transform"},{"N":"m_LocalPosition","F":"z","P":"","V":0.0,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Transform"},{"N":"m_Color","F":"r","P":"","V":1.0,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Light"},{"N":"m_Color","F":"g","P":"","V":0.0,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Light"},{"N":"m_Color","F":"b","P":"","V":0.0,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Light"}]},{"Id":"04d76bb4-76f1-47bc-91df-c0f618c9968c","StateName":"State_1467720190","AnimationClipName":"VSM_Directional_Light_1467720186","Time":0.10000000149011612,"Properties":[{"N":"m_LocalPosition","F":"x","P":"","V":-0.9070000052452087,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Transform"},{"N":"m_LocalPosition","F":"y","P":"","V":1.9889999628067017,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Transform"},{"N":"m_LocalPosition","F":"z","P":"","V":0.0,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Transform"},{"N":"m_Color","F":"r","P":"","V":1.0,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Light"},{"N":"m_Color","F":"g","P":"","V":0.9310345649719238,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Light"},{"N":"m_Color","F":"b","P":"","V":0.0,"OV":{"instanceID":0},"BV":false,"T":0,"C":"UnityEngine.Light"}]},{"Id":"9a06fb2b-8d01-44f8-924b-0ca3acafa6f2","StateName":"State_1467720191","AnimationClipName":"VSM_Directional_Light_1467720186","Time":0.20000000298023225,"Properties":[]}]}]}'

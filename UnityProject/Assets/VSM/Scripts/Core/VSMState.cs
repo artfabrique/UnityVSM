@@ -46,14 +46,15 @@ namespace Revenga.VSM
             Object
         }
         
-        public string N;
-        public string P;
-        public float V;
+        public string N; // Property Name
+        public string F; // Struct Field
+        public string P; // Path to GameObject transform
+        public float V; // Float Value
         [SerializeField]
         public UnityEngine.Object OV;
         public bool BV;
         public VSMStatePropertyType T;
         [SerializeField]
-        public string C;
+        public string C; // Type name of the Component
     }
 }

@@ -586,7 +586,19 @@ namespace Revenga.VSM
                 {
                     VSMStateProperty propery = new VSMStateProperty();
                     propery.P = binding.path;
-                    propery.N = binding.propertyName.TrimStart('m','_');
+                    //Check if property is a struct
+                    if (binding.propertyName.Contains("."))
+                    {
+                        propery.N = binding.propertyName.Substring(0,
+                            binding.propertyName.IndexOf(".", StringComparison.Ordinal));
+                        propery.F =
+                            binding.propertyName.Substring(binding.propertyName.IndexOf(".", StringComparison.Ordinal) +
+                                                           1);
+                    }
+                    else
+                    {
+                        propery.N = binding.propertyName;
+                    }
 
                     Keyframe stateKey = curve.keys.FirstOrDefault(x => Math.Abs(x.time - state.Time) < float.Epsilon);
  

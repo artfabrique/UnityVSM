@@ -66,6 +66,8 @@
     <Compile Include="Assets\VSM\Scripts\Core\VSMManager.cs" />
     <Compile Include="Assets\VSM\Scripts\Core\VSMState.cs" />
     <Compile Include="Assets\VSM\Scripts\Generated\VSM_Container.cs" />
+    <Compile Include="Assets\VSM\Scripts\Utils\Assembly\AssemblyTypeDefinition.cs" />
+    <Compile Include="Assets\VSM\Scripts\Utils\Assembly\AssemblyUtils.cs" />
     <Compile Include="Assets\VSM\Scripts\ViewStateController.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
