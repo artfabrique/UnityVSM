@@ -1,0 +1,30 @@
+﻿<#@ template language="C#" linePragmas="false" #>
+<#@ parameter name="m_Enums" type="System.Collections.Generic.Dictionary<string,string[]>" #>
+<#@ parameter name="m_ClassName" type="System.String" #>
+<#@ import namespace="System.Text.RegularExpressions" #>
+/*
+GENERATED CODE!
+DO NOT MODIFY!
+*/
+using UnityEngine;
+
+public static class <#= m_ClassName #> 
+{
+    public enum Managers 
+    {
+    <#foreach (var e in m_Enums) { #>
+    <#=e.Key.ToString()#>,
+    <#}#>
+}
+
+<#foreach (var e in m_Enums) { #>
+    public enum <#= e.Key #>
+    {
+<#for (int i = 0; i < e.Value.Length; i++)	{
+Regex rgx = new Regex("[^a-zA-Z0-9_]");
+var str = rgx.Replace(e.Value[i], "");#>
+        <#=str.Replace(" ","_").ToString()#>,
+<#}#>
+    }
+<#}#>
+}
