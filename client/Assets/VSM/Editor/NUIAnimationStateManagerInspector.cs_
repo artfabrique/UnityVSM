@@ -1,0 +1,445 @@
+﻿using System;
+using UnityEngine;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using CodeGeneration;
+using PrefabEvolution;
+using SA.Common.CustomDataStructures;
+using TT.GER.Logic.SharedLogic.Modules.DataInfo;
+using UnityEditor;
+using UnityEditor.Animations;
+using UnityEditor.SceneManagement;
+using UnityEditorInternal;
+using AnimatorControllerParameterType = UnityEngine.AnimatorControllerParameterType;
+
+
+[CustomEditor(typeof(NUIAnimationStateManager))]
+public class NUIAnimationStateManagerInspector : Editor
+{
+
+    private NUIAnimationStateManager StateManager;
+    private bool _initialized;
+
+    private string _stateTagToCreate;
+
+    public override void OnInspectorGUI()
+    {
+        Init();
+
+        if (StateManager.AnimatorRef == null)
+        {
+            NGUIEditorTools.DrawProperty(serializedObject, "AnimatorRef");
+            return;
+        }
+
+        if (!Application.isPlaying)
+        {
+            UpdateAvaliableStates();
+            EditorUtility.SetDirty(StateManager);
+        }
+
+        foreach (var stateInfo in StateManager.StateInfos)
+        {
+            if (stateInfo.AvaliableStates.Count > 0)
+            {
+                var prevDefaultStateHash = stateInfo.DefaultStateHash;
+
+                if (NGUIEditorTools.DrawHeader("Manager: " + stateInfo.Name))
+                {
+                    NGUIEditorTools.BeginContents();
+                    EditorGUILayout.BeginHorizontal();
+
+                    if (Application.isPlaying)
+                    {
+                        var newCurrentState = NGUIEditorTools.DrawList("CurrentState: ",
+                            stateInfo.AvaliableStates.ToArray(),
+                            stateInfo.CurrentState);
+                        if (newCurrentState != stateInfo.CurrentState)
+                        {
+                            Debug.Log("NUIAnimationStateManagerInspector: Changed currentState to " + newCurrentState);
+                            stateInfo.CurrentState = newCurrentState;
+                            StateManager.SwitchState(stateInfo.Name, newCurrentState, true);
+                        }
+                    }
+                    else
+                    {
+                        EditorGUILayout.LabelField("CurrentState: " + stateInfo.CurrentState);
+                    }
+                    EditorGUILayout.EndHorizontal();
+                    EditorGUI.BeginChangeCheck();
+                    var newDefaultState = NGUIEditorTools.DrawList("DefaultState: ", stateInfo.AvaliableStates.ToArray(),
+                        stateInfo.DefaultState);
+                    var newDefaultStateHash = Animator.StringToHash(newDefaultState);
+
+                    ChildAnimatorState[] childAnimatorStates =
+                        (StateManager.AnimatorRef.runtimeAnimatorController as
+                            UnityEditor.Animations.AnimatorController)
+                            .layers[stateInfo.Index].stateMachine.states.Where(x => x.state.name == newDefaultState)
+                            .ToArray();
+
+                    AnimationClip motion = childAnimatorStates.First().state.motion as AnimationClip;
+
+                    if (prevDefaultStateHash != newDefaultStateHash)
+                    {
+                        stateInfo.CurrentState = newDefaultState;
+                        stateInfo.CurrentStateHash = newDefaultStateHash;
+                        stateInfo.DefaultState = newDefaultState;
+                        stateInfo.DefaultStateHash = newDefaultStateHash;
+
+
+                        StateManager.SwitchState(stateInfo.Name, newDefaultState, true);
+                        if (!Application.isPlaying)
+                        {
+                            motion.SampleAnimation(StateManager.gameObject,
+                                motion.length*
+                                stateInfo.AvaliableStateTimings[stateInfo.AvaliableStates.IndexOf(newDefaultState)]);
+                            if (StateManager.gameObject.GetComponent<UIWidget>() != null)
+                            {
+                                if (StateManager.gameObject.GetComponent<UIWidget>().panel != null)
+                                {
+                                    StateManager.gameObject.GetComponent<UIWidget>().panel.Refresh();
+                                    StateManager.gameObject.GetComponent<UIWidget>().panel.ResetAndUpdateAnchors();
+                                    StateManager.gameObject.GetComponent<UIWidget>().panel.RebuildAllDrawCalls();
+
+
+                                }
+                            }
+                        }
+
+                        (StateManager.AnimatorRef.runtimeAnimatorController as UnityEditor.Animations.AnimatorController)
+                            .layers[stateInfo.Index].stateMachine.defaultState = childAnimatorStates.First().state;
+
+                        if (!Application.isPlaying)
+                        {
+                            EditorUtility.SetDirty(StateManager);
+                            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+                        }
+
+                    }
+
+                    if (stateInfo.IsUsingStateTags)
+                    {
+                        EditorGUILayout.Separator();
+                        EditorGUILayout.Separator();
+                        if (NGUIEditorTools.DrawHeader("Tools: " + stateInfo.Name))
+                        {
+                            NGUIEditorTools.BeginContents();
+                            EditorGUILayout.BeginHorizontal();
+                            _stateTagToCreate = NGUIEditorTools.DrawList("Create tag for:",
+                                stateInfo.AvaliableStates.ToArray(), _stateTagToCreate);
+                            if (GUILayout.Button("Create..."))
+                            {
+                                CreateSingleTag(motion, _stateTagToCreate);
+                            }
+                            EditorGUILayout.EndHorizontal();
+                            if (GUILayout.Button("Recreate all StateTags"))
+                            {
+                                CreateTags(motion, stateInfo.AvaliableStates.ToArray());
+                            }
+                            NGUIEditorTools.EndContents();
+                        }
+
+                    }
+
+                    NGUIEditorTools.EndContents();
+                    if (EditorGUI.EndChangeCheck() && !Application.isPlaying)
+                    {
+                        Undo.RecordObject(StateManager, "Changed State Manager Values");
+                        EditorApplication.SaveAssets();
+                    }
+                }
+            }
+            else
+            {
+                if (NGUIEditorTools.DrawHeader("Manager: " + stateInfo.Name))
+                {
+                    NGUIEditorTools.BeginContents();
+                    EditorGUILayout.LabelField("This manager does not contain any states.");
+                    NGUIEditorTools.EndContents();
+                }
+            }
+        }
+
+        var instance = EditorUtility.InstanceIDToObject(StateManager.gameObject.GetInstanceID()) as GameObject;
+        if (instance != null)
+        {
+
+            var prefabInstance = FindFirstPrefabRootUpwards(instance);
+
+            if (prefabInstance)
+            {
+                bool rootPrefab = PrefabUtility.GetPrefabParent(prefabInstance.gameObject) == prefabInstance.Prefab;
+                if (rootPrefab)
+                {
+                    if (StateManager.StateInfos.Count > 0)
+                    {
+                        EditorGUILayout.BeginHorizontal();
+                        EditorGUILayout.LabelField("Tools");
+                        EditorGUILayout.EndHorizontal();
+
+                        if (string.IsNullOrEmpty(StateManager.BaseSMClassName))
+                            StateManager.BaseSMClassName = "SM_" +
+                                                           PrefabUtility.FindPrefabRoot(StateManager.gameObject)
+                                                               .name.Replace("Prefab_", "");
+
+                        string contextName = EditorGUILayout.TextField("Class Name", StateManager.BaseSMClassName);
+                        StateManager.BaseSMClassName = contextName;
+
+                        if (GUILayout.Button("Regenerate Code"))
+                        {
+                            RegenerateCode(contextName);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private PEPrefabScript FindFirstPrefabRootUpwards(GameObject go)
+    {
+        var prefabInstance = go.GetComponent<PEPrefabScript>();
+        if (prefabInstance == null)
+        {
+            if (go.transform.parent == null)
+                return null;
+            else
+                return FindFirstPrefabRootUpwards(go.transform.parent.gameObject);
+        }
+        else
+        {
+            return go.GetComponent<PEPrefabScript>();
+        }
+    }
+
+    private void Init()
+    {
+        if (_initialized) return;
+
+        StateManager = (NUIAnimationStateManager)target;
+        if (StateManager.AnimatorRef == null) StateManager.AnimatorRef = StateManager.GetComponent<Animator>();
+
+        if(StateManager.StateInfos==null)
+            StateManager.StateInfos = new List<NUIAnimationStateManager.StateManagerInfo>();
+
+        _initialized = true;
+    }
+
+
+    private void UpdateAvaliableStates()
+    {
+        UnityEditor.Animations.AnimatorController ac = StateManager.AnimatorRef.runtimeAnimatorController as UnityEditor.Animations.AnimatorController;
+        if (ac == null)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("There is no Animation Controller attached to Animator!");
+            EditorGUILayout.EndHorizontal();
+            return;
+        }
+        UnityEditor.Animations.AnimatorControllerLayer[] stateManagerLayers = ac.layers.ToArray();
+
+        List<NUIAnimationStateManager.StateManagerInfo> newStateInfos = new List<NUIAnimationStateManager.StateManagerInfo>();
+
+        if (stateManagerLayers.Count() == 0)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField("There is no state managers in the animator yet :(");
+            EditorGUILayout.EndHorizontal();
+            return;
+        }
+
+        for (int i = 0; i < stateManagerLayers.Length; i++)
+        {
+            if (!stateManagerLayers[i].name.StartsWith("SM_")) continue;
+            NUIAnimationStateManager.StateManagerInfo currentStateInfo = new NUIAnimationStateManager.StateManagerInfo();
+            currentStateInfo.AvaliableStates = stateManagerLayers[i].stateMachine.states.Select(x => x.state.name).ToList();
+            currentStateInfo.AvaliableStateTimings = new float[currentStateInfo.AvaliableStates.Count];
+
+            // Chech if there is no Speed parameter and add it
+            if (ac.parameters.Select(x => x.name).All(x => x != "Speed_" + stateManagerLayers[i].name))
+            {
+                UnityEngine.AnimatorControllerParameter ap = new UnityEngine.AnimatorControllerParameter();
+                ap.type = AnimatorControllerParameterType.Float;
+                ap.name = "Speed_" + stateManagerLayers[i].name;
+                ap.defaultFloat = 0.0f;
+                ac.AddParameter(ap);
+                Debug.Log("Adding Speed parameter for Speed_" + stateManagerLayers[i].name);
+            }
+
+            //Check if this state manager uses "single clip + animation events" approach.
+            if (stateManagerLayers[i].stateMachine.states.Select(x => x.state.motion.name).Distinct().Count() == 1)
+            {
+                currentStateInfo.IsUsingStateTags = true;
+                currentStateInfo.MainClipName = stateManagerLayers[i].stateMachine.states.Select(x => x.state.motion.name).Distinct().First();
+
+                List<AnimatorState> statesList = stateManagerLayers[i].stateMachine.states.Select(x => x.state).ToList();
+
+                for (int j = 0; j < statesList.Count; j++)
+                {
+                    AnimationClip stateClip = statesList[j].motion as AnimationClip;
+                    List<AnimationEvent> clipTagsList = stateClip.events.Where(x => x.functionName == "StateTag").ToList();
+                    // Find corresponding StateTag in states' AnimationClip
+                    AnimationEvent stateClipTag = clipTagsList.Where(x => x.stringParameter == statesList[j].name).FirstOrDefault();
+
+                    //Bing speed to parameter
+
+                    statesList[j].speedParameterActive = true;
+                    statesList[j].speedParameter = "Speed_" + stateManagerLayers[i].name;
+
+                    if (stateClipTag != null)
+                    {
+                        // Set cycle offset for mecanim state to zero.
+                        statesList[j].cycleOffset = 0;
+                        currentStateInfo.AvaliableStateTimings[currentStateInfo.AvaliableStates.IndexOf(statesList[j].name)] = (float)Math.Round(stateClipTag.time / stateClip.length, 3);
+                    }
+                }
+            }
+            else
+            {
+                currentStateInfo.IsUsingStateTags = false;
+            }
+
+            currentStateInfo.Name = stateManagerLayers[i].name;
+            currentStateInfo.Index = i;
+
+            currentStateInfo.DefaultState = stateManagerLayers[i].stateMachine.defaultState.name;
+            currentStateInfo.DefaultStateHash = stateManagerLayers[i].stateMachine.defaultState.nameHash;
+
+            currentStateInfo.CurrentState = currentStateInfo.DefaultState;
+            currentStateInfo.CurrentStateHash = currentStateInfo.DefaultStateHash;
+            
+            if (currentStateInfo.AvaliableStates.Count == 0)
+            {
+                return;
+            }
+
+            currentStateInfo.DefaultStateHash = stateManagerLayers[i].stateMachine.defaultState.nameHash;
+            currentStateInfo.CurrentStateHash = currentStateInfo.DefaultStateHash;
+
+            newStateInfos.Add(currentStateInfo);
+        }
+
+        StateManager.StateInfos = newStateInfos.Clone();
+
+    }
+
+
+    private void RegenerateCode(string contextName)
+    {
+        string localPath = string.Join(Path.DirectorySeparatorChar+"", new[] {"Assets","scripts", "NUI", "NUIAnimation", "Generated"});
+
+        
+
+        //Debug.Log("contextName = "+ contextName);
+
+        
+        GeneratorEnums generator = new GeneratorEnums();
+        generator.Session = new Dictionary<string, object>();
+        generator.Session["m_ClassName"] = contextName;
+        generator.Session["m_Enums"] = StateManager.StateInfos.Where(x=>x.AvaliableStates.Count>0).ToDictionary(x=>x.Name,x=>x.AvaliableStates.ToArray());
+
+        generator.Initialize();
+
+        string result = generator.TransformText();
+
+        var path = Path.GetFullPath(localPath + Path.DirectorySeparatorChar + contextName + ".cs");
+        File.WriteAllText(path,result);
+
+        AssetDatabase.ImportAsset(localPath);
+        AssetDatabase.Refresh();
+        
+    }
+
+    private void CreateTags(AnimationClip ac, string[] states)
+    {
+        AnimationEvent[] otherEvents = ac.events.Where(x => x.functionName != "StateTag").ToArray();
+        List<AnimationEvent> newEvents = otherEvents.ToList();
+        
+        float tailTime = ac.length;
+        float sampleRate = ac.frameRate;
+
+        for (int i = 0; i < states.Length; i++)
+        {
+            AnimationEvent e = new AnimationEvent();
+            e.functionName = "StateTag";
+            e.stringParameter = states[i];
+            e.time = tailTime + (i*((1/sampleRate)*2));
+            newEvents.Add(e);
+        }
+
+        newEvents.Sort((x, y) => x.time.CompareTo(y.time));
+
+        UnityEditor.AnimationUtility.SetAnimationEvents(ac, newEvents.ToArray());
+
+        if (!Application.isPlaying)
+        {
+            EditorUtility.SetDirty(StateManager);
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+        }
+    }
+
+    private void CreateSingleTag(AnimationClip ac, string stateName)
+    {
+        // Return if it's already exists on timeline;
+        if (ac.events.Any(x => x.functionName == "StateTag" && x.stringParameter == stateName)) return;
+
+        float tailTime = ac.length;
+        float sampleRate = ac.frameRate;
+
+        AnimationEvent e = new AnimationEvent();
+        e.functionName = "StateTag";
+        e.stringParameter = stateName;
+        e.time = tailTime + (1/sampleRate);
+
+        List<AnimationEvent> newEvents = ac.events.ToList();
+        newEvents.Add(e);
+        newEvents.Sort((x,y)=>x.time.CompareTo(y.time));
+        UnityEditor.AnimationUtility.SetAnimationEvents(ac,newEvents.ToArray());
+
+        if (!Application.isPlaying)
+        {
+            EditorUtility.SetDirty(StateManager);
+            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+        }
+
+    }
+
+    #region Unused stuff
+    /// <summary>
+    /// </summary>
+    /// <returns>array of original weights</returns>
+    private float[] IsolateAnimationLayerByName(Animator animator, string layerName)
+    {
+        List<float> originalWeights = new List<float>();
+        var isolatedLayerIndex = animator.GetLayerIndex(layerName);
+        //(animator.runtimeAnimatorController as UnityEditor.Animations.AnimatorController).layers[0].
+        if (isolatedLayerIndex < 0) return null;
+        for (int i = 0; i < animator.layerCount; i++)
+        {
+            if (i == isolatedLayerIndex) continue;
+            originalWeights.Add(animator.GetLayerWeight(i));
+            animator.SetLayerWeight(i, 0);
+        }
+
+        return originalWeights.ToArray();
+    }
+
+    private void DeisolateAnimationLayerByName(float[] originalWeights, Animator animator, string layerName)
+    {
+        var isolatedLayerIndex = animator.GetLayerIndex(layerName);
+        if (isolatedLayerIndex < 0) return;
+        var originalWeightIndex = 0;
+        for (int i = 0; i < animator.layerCount; i++)
+        {
+            if (i == isolatedLayerIndex) continue;
+            animator.SetLayerWeight(i, originalWeights[originalWeightIndex]);
+            originalWeightIndex++;
+        }
+    }
+    #endregion
+
+}
+
+
