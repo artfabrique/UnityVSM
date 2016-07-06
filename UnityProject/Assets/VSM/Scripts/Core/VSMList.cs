@@ -1,13 +1,12 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Revenga.VSM
 {
-    [System.Serializable]
+    [Serializable]
     public class VSMList
     {
-        [SerializeField]
-        public List<VSMManager> ViewStateManagers;
+        [SerializeField] public List<VSMManager> ViewStateManagers;
     }
 }

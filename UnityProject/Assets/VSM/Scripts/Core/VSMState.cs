@@ -28,6 +28,7 @@ namespace Revenga.VSM
     [System.Serializable]
     public class VSMStateProperty
     {
+        
         public enum ParamType
         {
             PropertyName = 0,
@@ -42,19 +43,30 @@ namespace Revenga.VSM
         public enum VSMStatePropertyType
         {
             Float,
-            Bool,
-            Object
+            Vector2,
+            Vector3,
+            Vector4,
+            Color,
+            EulerAngles
         }
         
         public string N; // Property Name
-        public string F; // Struct Field
         public string P; // Path to GameObject transform
-        public float V; // Float Value
+
         [SerializeField]
-        public UnityEngine.Object OV;
-        public bool BV;
+        public Vector4 O;
+        
         public VSMStatePropertyType T;
         [SerializeField]
         public string C; // Type name of the Component
+
+        public object GetValue<T>()
+        {
+            var type = typeof (T);
+
+
+
+            return default(T);
+        }
     }
 }

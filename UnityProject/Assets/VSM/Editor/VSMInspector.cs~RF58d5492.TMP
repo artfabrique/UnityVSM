@@ -590,7 +590,7 @@ namespace Revenga.VSM
 
                     var property = state.Properties.FirstOrDefault(p => p.N == propertyName) ?? new VSMStateProperty {P = binding.path};
 
-                    Keyframe stateKey = curve.keys.FirstOrDefault(x => Math.Abs(x.time - state.Time) < float.Epsilon);
+                    //bool isProcessingStruct = false;
 
                     //Check if property is a struct
                     if (binding.propertyName.Contains("."))
@@ -598,87 +598,96 @@ namespace Revenga.VSM
                         UnityEngine.Object targetObj = AnimationUtility.GetAnimatedObject(_controller.gameObject, binding);
                         
                         property.N = propertyName;
-                        var fieldName = binding.propertyName.Substring(binding.propertyName.IndexOf(".", StringComparison.Ordinal) + 1);
+                        property.F = binding.propertyName.Substring(binding.propertyName.IndexOf(".", StringComparison.Ordinal) + 1);
                         var tmpName = char.ToLowerInvariant(property.N[0]) + property.N.Substring(1);
-                        if (tmpName == "localEulerAnglesRaw") tmpName = "eulerAngles";
 
                         var existingProperty = state.Properties.FirstOrDefault(x => x.N == property.N);
                         if (existingProperty != null) property = existingProperty;
 
-                        Type componentType = targetObj.GetType();
-                        MemberInfo member = componentType.GetMember(tmpName).FirstOrDefault();
+                        Type transform = targetObj.GetType();
+                        MemberInfo member = transform.GetMember(tmpName).FirstOrDefault();
                         if (member == null)
                         {
                             Debug.LogError("Member not found" + propertyName);
                             continue;
                         }
 
-                        string typeName;
+                        string name;
+                        string nameSpace;
                         Type type;
 
                         if (member.MemberType == MemberTypes.Property)
                         {
                             type = ((PropertyInfo)member).PropertyType;
-                            typeName = type.Name;
+                            name = type.Name;
+                            nameSpace = type.Namespace;
                         }
                         else
                         {
                             type = ((FieldInfo)member).FieldType;
-                            typeName = type.Name;
+                            name = type.Name;
+                            nameSpace = type.Namespace;
                         }
-                            
-                        switch (typeName)
+
+                        Keyframe stateKey = curve.keys.FirstOrDefault(x => Math.Abs(x.time - state.Time) < float.Epsilon);
+                        
+                        if (property.OV == null)
                         {
-                            case "Color":
-                                property.O = CreateInstanceByType<Color>(property.O, type, fieldName, stateKey.value);
-                                property.T = VSMStateProperty.VSMStatePropertyType.Color;
-                                break;
+                            Type MyType = type;// AssemblyUtils.FindTypeFromLoadedAssemblies(name);
+                            
+                            switch (name)
+                            {
+                                case "Color":
+                                    var color = (Color)Activator.CreateInstance(MyType);
+                                    property.OV = property.OV != null ? (Color) property.OV + color : color;
+                                    break;
 
-                            case "Vector2":
-                                property.O = CreateInstanceByType<Vector2>(property.O, type, fieldName, stateKey.value);
-                                property.T = VSMStateProperty.VSMStatePropertyType.Vector2;
-                                break;
+                                case "Vector2":
+                                    var vector2 = (Vector2)Activator.CreateInstance(MyType);
+                                    property.OV = property.OV != null ? (Vector2)property.OV + vector2 : vector2; break;
 
-                            case "Vector3":
-                                property.O = CreateInstanceByType<Vector3>(property.O, type, fieldName, stateKey.value);
-                                property.T = VSMStateProperty.VSMStatePropertyType.Vector3;
-                                break;
+                                case "Vector3":
+                                    var vector3 = CreateInstanceByType<Vector3>(MyType, property.F, stateKey.value);
+                                    /*var vector3 = (Vector3)Activator.CreateInstance(MyType);
+                                    var info = type.GetField(property.F);
+                                    object boxed = vector3;
+                                    info.SetValue(boxed, stateKey.value);
+                                    vector3 = (Vector3) boxed;*/
+                                    property.OV = property.OV != null ? (Vector3)property.OV + vector3 : vector3; break;
 
-                            case "Vector4":
-                                property.O = CreateInstanceByType<Vector4>(property.O, type, fieldName, stateKey.value);
-                                property.T = VSMStateProperty.VSMStatePropertyType.Vector4;
-                                break;
+                                case "Vector4":
+                                    var vector4 = (Vector4)Activator.CreateInstance(MyType);
+                                    property.OV = property.OV != null ? (Vector4)property.OV + vector4 : vector4; break;
 
-                            case "Quaternion":
-                                property.O = CreateInstanceByType<Quaternion>(property.O, type, fieldName, stateKey.value);
-                                property.T = VSMStateProperty.VSMStatePropertyType.EulerAngles;
-                                break;
+                                case "Quaternion":
+                                    var quaternion = (Quaternion)Activator.CreateInstance(MyType);
+                                    property.OV = property.OV != null ? (Quaternion)property.OV * quaternion : quaternion; break;
 
-                            default:
-                                continue;
-                        }
+                                default:
+                                    continue;
+                            }
                            
+                        }
                     }
                     else
                     {
-
                         property.N = binding.propertyName;
-                        property.O = new Vector4(stateKey.value, 0);
-                        property.T = VSMStateProperty.VSMStatePropertyType.Float;
+                        property.F = binding.propertyName;
+                        //property.OV = binding.
                     }
+
+ 
+                    property.T = VSMStateProperty.VSMStatePropertyType.Float;
+                    property.C = binding.type.ToString();
+                    //property.V = stateKey.value;
 
                     
-                    property.C = binding.type.ToString();
-
-                    if (state.Properties.All(p => p.N != property.N))
-                    {
-                        state.Properties.Add(property);
-                    }
+                    state.Properties.Add(property);
                 }
                 
             }
 
-            /*for (int j = 0; j < objectCurveBindingsList.Count; j++)
+            for (int j = 0; j < objectCurveBindingsList.Count; j++)
             {
                 EditorCurveBinding binding = objectCurveBindingsList[j];
                 ObjectReferenceKeyframe[] curveKeys = AnimationUtility.GetObjectReferenceCurve(ac, binding);
@@ -690,18 +699,20 @@ namespace Revenga.VSM
                 if (curveKeys.Any(x => Math.Abs(x.time - state.Time) < float.Epsilon))
                 {
                     ObjectReferenceKeyframe stateKey = curveKeys.FirstOrDefault(x => Math.Abs(x.time - state.Time) < float.Epsilon);
-                    propery.O = stateKey.value;
+                    propery.OV = stateKey.value;
                 }
                 state.Properties.Add(propery);
-            }*/
+            }
         }
 
-        private static Vector4 CreateInstanceByType<T>(object obj, Type myType, string fieldName, float value)
+        private T CreateInstanceByType<T>(Type MyType, string fieldName, float value)
         {
-            if(obj == null) obj = (T)Activator.CreateInstance(myType);
-            var info = myType.GetField(fieldName);
-            info.SetValue(obj, value);
-            return (Vector4)obj;
+            var vector3 = (T)Activator.CreateInstance(MyType);
+            var info = MyType.GetField(fieldName);
+            object boxed = vector3;
+            info.SetValue(boxed, value);
+            vector3 = (T)boxed;
+            return vector3;
         }
 
         private AnimatorControllerLayer GetManagerAnimationLayer(VSMManager manager, AnimatorControllerLayer[] animationLayers)

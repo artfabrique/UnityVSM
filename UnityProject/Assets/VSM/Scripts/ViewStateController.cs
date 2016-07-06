@@ -1,10 +1,9 @@
 ﻿using System;
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using UnityEditor;
+using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Revenga.VSM
 {
@@ -13,24 +12,19 @@ namespace Revenga.VSM
     {
         public const string VsmAnimatorSpeedParamName = "VSM_FrameJumper";
 
-        [SerializeField]
-        public VSMData VsmData;
+        [SerializeField] public VSMData VsmData;
 
-        [NonSerialized]
-        public VSMList VsmList;
+        [NonSerialized] public VSMList VsmList;
 
-        [NonSerialized]
-        public Dictionary<string, float> FloatBindings;
-        [NonSerialized]
-        public Dictionary<string, bool> BoolBindings;
-        [NonSerialized]
-        public Dictionary<string, UnityEngine.Object> ObjectBindings;
+        [NonSerialized] public Dictionary<string, UnityEditor.SerializedObject> FloatBindings;
+        [NonSerialized] public Dictionary<string, bool> BoolBindings;
+        [NonSerialized] public Dictionary<string, Object> ObjectBindings;
 
         private DelayedSwitchData _delayedData;
         private bool _initialized = false;
         private Animator _animatorRef;
         private bool _wasEnabled = false;
-        
+
 
         public void SwitchTo(string managerName, string stateName, bool forceUpdate = true)
         {
@@ -38,29 +32,29 @@ namespace Revenga.VSM
 
             if (!_initialized)
             {
-                Debug.LogError(String.Format(VSMError.VSMNotInitialized, managerName, stateName));
+                Debug.LogError(string.Format(VSMError.VSMNotInitialized, managerName, stateName));
                 return;
             }
 
-            if (VsmList.ViewStateManagers.All(x => x.ManagerName != managerName)) 
+            if (VsmList.ViewStateManagers.All(x => x.ManagerName != managerName))
             {
-                Debug.LogError(String.Format(VSMError.StateManagerNotFound,managerName,stateName));
+                Debug.LogError(string.Format(VSMError.StateManagerNotFound, managerName, stateName));
                 return;
             }
 
-            VSMManager vsmManager = VsmList.ViewStateManagers.FirstOrDefault(x=>x.ManagerName==managerName);
+            VSMManager vsmManager = VsmList.ViewStateManagers.FirstOrDefault(x => x.ManagerName == managerName);
             if (vsmManager != null)
             {
                 VSMState targetState = vsmManager.States.FirstOrDefault(x => x.StateName == stateName);
-                if (targetState==null)
+                if (targetState == null)
                 {
-                    Debug.LogError(String.Format(VSMError.StateNotFound, managerName, stateName));
+                    Debug.LogError(string.Format(VSMError.StateNotFound, managerName, stateName));
                     return;
                 }
 
                 if (!_animatorRef)
                 {
-                    Debug.LogError(String.Format(VSMError.CanNotFindAnimator, managerName, stateName));
+                    Debug.LogError(string.Format(VSMError.CanNotFindAnimator, managerName, stateName));
                     return;
                 }
 
@@ -68,22 +62,21 @@ namespace Revenga.VSM
 
                 if (!gameObject.activeInHierarchy || !gameObject.activeSelf || !_wasEnabled)
                 {
-                    Debug.LogWarning(String.Format(VSMError.AnimatiorDisabled, managerName, stateName));
+                    Debug.LogWarning(string.Format(VSMError.AnimatiorDisabled, managerName, stateName));
                     if (_delayedData == null) _delayedData = new DelayedSwitchData();
                     _delayedData.Manager = managerName;
                     _delayedData.State = stateName;
                     _delayedData.ForceUpdate = forceUpdate;
-
                 }
                 else
                 {
                     _delayedData = null;
 
-                    if(vsmManager.CurrentStateName==stateName && !forceUpdate) return;
+                    if (vsmManager.CurrentStateName == stateName && !forceUpdate) return;
 
                     if (_animatorRef.parameters.All(x => x.name != "VSM_" + managerName))
                     {
-                        Debug.LogError(String.Format(VSMError.CanNotFindSpeedParameter, managerName, stateName));
+                        Debug.LogError(string.Format(VSMError.CanNotFindSpeedParameter, managerName, stateName));
                         return;
                     }
 
@@ -102,7 +95,8 @@ namespace Revenga.VSM
                     }
                     */
 
-                    VsmList.ViewStateManagers[VsmList.ViewStateManagers.FindIndex(x => x.ManagerName == managerName)] = vsmManager;
+                    VsmList.ViewStateManagers[VsmList.ViewStateManagers.FindIndex(x => x.ManagerName == managerName)] =
+                        vsmManager;
                 }
             }
         }
@@ -120,18 +114,13 @@ namespace Revenga.VSM
             }
             else
             {
-                Debug.LogWarning(String.Format(VSMError.DataIsEmpty, gameObject.name));
+                Debug.LogWarning(string.Format(VSMError.DataIsEmpty, gameObject.name));
             }
         }
 
         public void RebindStates()
         {
-            Transform tmpTr;
-            float tmpFloat;
-            Type tmpType;
-            FieldInfo tmpFi;
-            Component tmpC;
-            if (VsmList==null || VsmList.ViewStateManagers==null) return;
+            if (VsmList == null || VsmList.ViewStateManagers == null) return;
             foreach (VSMManager manager in VsmList.ViewStateManagers)
             {
                 foreach (VSMState state in manager.States)
@@ -141,29 +130,44 @@ namespace Revenga.VSM
                         switch (property.T)
                         {
                             case VSMStateProperty.VSMStatePropertyType.Float:
-                                if (FloatBindings == null) FloatBindings = new Dictionary<string, float>();
-                                tmpTr = gameObject.transform.FindChild(property.P);
-                                if(tmpTr==null) continue;
+                                if (FloatBindings == null) FloatBindings = new Dictionary<string, SerializedObject>();
 
-                                tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);//Type.GetType(property.C);
-                                if(tmpType==null) continue;
-
-                                if (tmpType == typeof (Transform))
+                                var tmpTr = gameObject.transform.FindChild(property.P);
+                                if (tmpTr == null)
                                 {
+                                    Debug.LogWarning(property.P + " not found ");
                                     continue;
-                                    //FloatBindings.Add(string.Concat(property.P, property.C, property.N),tmpTr.lo);
                                 }
-                                else
+
+                                var tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);
+                                if (tmpType == null)
                                 {
-                                    tmpC = tmpTr.gameObject.GetComponent(tmpType);
-                                    if (tmpC == null) continue;
-
-                                    var tmpSO = new SerializedObject(tmpC);
-
-                                    // DO SOMETHING NOW WE HAVE PROPERTY BINDING!
-
-
+                                    Debug.LogWarning("Component " + property.C + " not found on " + property.P);
+                                    continue;
                                 }
+
+                                var tmpC = tmpTr.gameObject.GetComponent(tmpType);
+                                if (tmpC == null)
+                                {
+                                    Debug.LogWarning("Component " + property.C + " not found on " + property.P);
+                                    continue;
+                                }
+
+                                var tmpSO = new SerializedObject(tmpC);
+
+
+                                // DO SOMETHING NOW WE HAVE PROPERTY BINDING!
+
+                                var tmpSp = tmpSO.FindProperty(property.N);
+
+
+                                //tmpSp.vector3Value = property.V;
+
+                                tmpSp.serializedObject.ApplyModifiedProperties();
+
+                                //Debug.Log(tmpSp.vector3Value + "|" + property.V);
+
+
                                 break;
                         }
                     }
@@ -173,11 +177,11 @@ namespace Revenga.VSM
 
         public void Init()
         {
-            if(_initialized) return;
+            if (_initialized) return;
             _animatorRef = GetComponent<Animator>();
             _animatorRef.logWarnings = true;
             _animatorRef.enabled = true;
-            
+
             _initialized = true;
 
             ParseData();
@@ -194,7 +198,7 @@ namespace Revenga.VSM
             _wasEnabled = true;
             if (_delayedData != null)
             {
-                SwitchTo(_delayedData.Manager,_delayedData.State,_delayedData.ForceUpdate);
+                SwitchTo(_delayedData.Manager, _delayedData.State, _delayedData.ForceUpdate);
             }
         }
 
@@ -220,10 +224,18 @@ namespace Revenga.VSM
     public class VSMError
     {
         public const string NoStateManagers = "There are no any View State Managers...";
-        public const string StateManagerNotFound = "Sate Manager with name {0} was not found while switching to state {1}";
+
+        public const string StateManagerNotFound =
+            "Sate Manager with name {0} was not found while switching to state {1}";
+
         public const string StateNotFound = "Sate with name {1} was not found in {0} state manager";
-        public const string AnimatiorDisabled = "{0}:{1} | Animator component is disabled while trying switch state. This call was cached.";
-        public const string CanNotFindAnimator = "{0}:{1} | Animator reference is null. Be sure to init VSM before calling it's methods!";
+
+        public const string AnimatiorDisabled =
+            "{0}:{1} | Animator component is disabled while trying switch state. This call was cached.";
+
+        public const string CanNotFindAnimator =
+            "{0}:{1} | Animator reference is null. Be sure to init VSM before calling it's methods!";
+
         public const string VSMNotInitialized = "{0}:{1} | VSM was not initialized yet!";
         public const string CanNotFindSpeedParameter = "{0}:{1} | Can not find VSM_{0} parameter!";
         public const string DataIsEmpty = "VSM Data is empty in {0}...";
@@ -231,6 +243,7 @@ namespace Revenga.VSM
 
     public class VSMMessage
     {
-        public const string DataParsedSuccessfully = "VSM: Data has been successfully parsed! \nName: {0} \nTotal managers: {1}";
+        public const string DataParsedSuccessfully =
+            "VSM: Data has been successfully parsed! \nName: {0} \nTotal managers: {1}";
     }
 }
