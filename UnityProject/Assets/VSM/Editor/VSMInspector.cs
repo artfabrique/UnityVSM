@@ -597,11 +597,11 @@ namespace Revenga.VSM
                     {
                         UnityEngine.Object targetObj = AnimationUtility.GetAnimatedObject(_controller.gameObject, binding);
                         
-                        property.N = propertyName;
                         var fieldName = binding.propertyName.Substring(binding.propertyName.IndexOf(".", StringComparison.Ordinal) + 1);
-                        var tmpName = char.ToLowerInvariant(property.N[0]) + property.N.Substring(1);
+                        var tmpName = char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1);
                         if (tmpName == "localEulerAnglesRaw") tmpName = "eulerAngles";
-
+                        property.N = tmpName;
+                        
                         var existingProperty = state.Properties.FirstOrDefault(x => x.N == property.N);
                         if (existingProperty != null) property = existingProperty;
 
@@ -661,12 +661,10 @@ namespace Revenga.VSM
                     }
                     else
                     {
-
                         property.N = binding.propertyName;
                         property.O = new Vector4(stateKey.value, 0);
                         property.T = VSMStateProperty.VSMStatePropertyType.Float;
                     }
-
                     
                     property.C = binding.type.ToString();
 

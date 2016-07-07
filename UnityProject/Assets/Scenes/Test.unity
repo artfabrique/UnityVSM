@@ -94,6 +94,7 @@ GameObject:
   m_Component:
   - 4: {fileID: 873775510}
   - 108: {fileID: 873775509}
+  - 114: {fileID: 873775506}
   - 114: {fileID: 873775508}
   - 95: {fileID: 873775507}
   m_Layer: 0
@@ -103,6 +104,17 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &873775506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 873775505}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 092f9b892b53dff4194e36e01292d5b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!95 &873775507
 Animator:
   serializedVersion: 3
@@ -110,7 +122,7 @@ Animator:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 873775505}
-  m_Enabled: 1
+  m_Enabled: 0
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: 2e837496fd661b844ac3346c9fde77d5, type: 2}
   m_CullingMode: 0
@@ -174,7 +186,7 @@ Transform:
   m_LocalRotation: {x: 0.40821794, y: -0.23456973, z: 0.109381676, w: 0.87542605}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_LocalEulerAnglesHint: {x: 137.2, y: -29.289999, z: -85.799995}
+  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1

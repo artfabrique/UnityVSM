@@ -28,7 +28,6 @@ namespace Revenga.VSM
     [System.Serializable]
     public class VSMStateProperty
     {
-        
         public enum ParamType
         {
             PropertyName = 0,
@@ -59,14 +58,5 @@ namespace Revenga.VSM
         public VSMStatePropertyType T;
         [SerializeField]
         public string C; // Type name of the Component
-
-        public object GetValue<T>()
-        {
-            var type = typeof (T);
-
-
-
-            return default(T);
-        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Assets.VSM.Scripts;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -127,34 +128,39 @@ namespace Revenga.VSM
                 {
                     foreach (VSMStateProperty property in state.Properties)
                     {
+                        if (FloatBindings == null)
+                        {
+                            FloatBindings = new Dictionary<string, SerializedObject>();
+                        }
+
+                        var tmpTr = gameObject.transform.FindChild(property.P);
+                        if (tmpTr == null)
+                        {
+                            Debug.LogWarning(property.P + " not found ");
+                            continue;
+                        }
+
+                        var tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);
+                        if (tmpType == null)
+                        {
+                            Debug.LogWarning("Component " + property.C + " not found on " + property.P);
+                            continue;
+                        }
+
+                        var tmpC = tmpTr.gameObject.GetComponent(tmpType);
+                        if (tmpC == null)
+                        {
+                            Debug.LogWarning("Component " + property.C + " not found on " + property.P);
+                            continue;
+                        }
+
+                        UIReflectionSystem.Set(tmpC, property.N, Vector3.zero);
+
+                        var tmpSO = new SerializedObject(tmpC);
+
                         switch (property.T)
                         {
                             case VSMStateProperty.VSMStatePropertyType.Float:
-                                if (FloatBindings == null) FloatBindings = new Dictionary<string, SerializedObject>();
-
-                                var tmpTr = gameObject.transform.FindChild(property.P);
-                                if (tmpTr == null)
-                                {
-                                    Debug.LogWarning(property.P + " not found ");
-                                    continue;
-                                }
-
-                                var tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);
-                                if (tmpType == null)
-                                {
-                                    Debug.LogWarning("Component " + property.C + " not found on " + property.P);
-                                    continue;
-                                }
-
-                                var tmpC = tmpTr.gameObject.GetComponent(tmpType);
-                                if (tmpC == null)
-                                {
-                                    Debug.LogWarning("Component " + property.C + " not found on " + property.P);
-                                    continue;
-                                }
-
-                                var tmpSO = new SerializedObject(tmpC);
-
 
                                 // DO SOMETHING NOW WE HAVE PROPERTY BINDING!
 
@@ -180,7 +186,7 @@ namespace Revenga.VSM
             if (_initialized) return;
             _animatorRef = GetComponent<Animator>();
             _animatorRef.logWarnings = true;
-            _animatorRef.enabled = true;
+            _animatorRef.enabled = false;
 
             _initialized = true;
 
