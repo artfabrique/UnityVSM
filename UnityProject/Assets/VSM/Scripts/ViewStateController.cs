@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Assets.VSM.Scripts;
 using UnityEditor;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Revenga.VSM
 {
@@ -14,17 +12,12 @@ namespace Revenga.VSM
         public const string VsmAnimatorSpeedParamName = "VSM_FrameJumper";
 
         [SerializeField] public VSMData VsmData;
-
         [NonSerialized] public VSMList VsmList;
-
-        [NonSerialized] public Dictionary<string, UnityEditor.SerializedObject> FloatBindings;
-        [NonSerialized] public Dictionary<string, bool> BoolBindings;
-        [NonSerialized] public Dictionary<string, Object> ObjectBindings;
-
+        
         private DelayedSwitchData _delayedData;
-        private bool _initialized = false;
+        private bool _initialized;
         private Animator _animatorRef;
-        private bool _wasEnabled = false;
+        private bool _wasEnabled;
 
 
         public void SwitchTo(string managerName, string stateName, bool forceUpdate = true)
@@ -128,11 +121,6 @@ namespace Revenga.VSM
                 {
                     foreach (VSMStateProperty property in state.Properties)
                     {
-                        if (FloatBindings == null)
-                        {
-                            FloatBindings = new Dictionary<string, SerializedObject>();
-                        }
-
                         var tmpTr = gameObject.transform.FindChild(property.P);
                         if (tmpTr == null)
                         {

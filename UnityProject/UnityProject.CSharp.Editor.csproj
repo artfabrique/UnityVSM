@@ -88,6 +88,21 @@
     <Reference Include="SyntaxTree.VisualStudio.Unity.Bridge">
       <HintPath>Library\UnityAssemblies\SyntaxTree.VisualStudio.Unity.Bridge.dll</HintPath>
     </Reference>
+    <Reference Include="DOTween">
+      <HintPath>Assets\DOTween\DOTween.dll</HintPath>
+    </Reference>
+    <Reference Include="DOTweenEditor">
+      <HintPath>Assets\DOTween\Editor\DOTweenEditor.dll</HintPath>
+    </Reference>
+    <Reference Include="DOTween43">
+      <HintPath>Assets\DOTween\DOTween43.dll</HintPath>
+    </Reference>
+    <Reference Include="DOTween46">
+      <HintPath>Assets\DOTween\DOTween46.dll</HintPath>
+    </Reference>
+    <Reference Include="DOTween50">
+      <HintPath>Assets\DOTween\DOTween50.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="UnityProject.CSharp.csproj">
@@ -100,6 +115,14 @@
     <Compile Include="Assets\VSM\Editor\VSMEditorTools.cs" />
     <Compile Include="Assets\VSM\Editor\VSMInspector.cs" />
     <Compile Include="Assets\VSM\Editor\VSMPreferencesWindow.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\DOTween\DOTween.XML" />
+    <None Include="Assets\DOTween\DOTween43.xml" />
+    <None Include="Assets\DOTween\DOTween46.xml" />
+    <None Include="Assets\DOTween\DOTween50.xml" />
+    <None Include="Assets\DOTween\Editor\DOTweenEditor.XML" />
+    <None Include="Assets\DOTween\readme.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\SyntaxTree\UnityVS\2015\UnityVS.CSharp.targets" />
 </Project>
