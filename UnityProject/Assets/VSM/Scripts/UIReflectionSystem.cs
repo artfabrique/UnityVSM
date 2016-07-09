@@ -1,27 +1,16 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Reflection;
 using DG.Tweening;
-using DG.Tweening.Core;
 using UnityEngine;
 
 namespace Assets.VSM.Scripts
 {
     public static class UIReflectionSystem
     {
-        private static readonly Dictionary<string, Methods>  Metods = new Dictionary<string, Methods>();
-
-        private static readonly Dictionary<Component, TweenStruct>  PropertiesInTween = new Dictionary<Component, TweenStruct>();
-
-        private static bool _isCoroutineActive;
-
-        private static MonoBehaviour _mb;
+        private static readonly Dictionary<string, Methods> Metods = new Dictionary<string, Methods>();
 
         private static Methods CreateMethod(Component component, string property)
         {
-            if (property == "color") return null;
-
             var type = component.GetType();
 
             var propertyInfo = type.GetProperty(property);
@@ -29,97 +18,173 @@ namespace Assets.VSM.Scripts
             var getMethod = propertyInfo.GetGetMethod(true);
             var setMethod = propertyInfo.GetSetMethod(true);
 
-            var methods = new Methods(getMethod, setMethod);
+            if (getMethod == null || setMethod == null) return null;
+
+            var methods = new Methods(getMethod, setMethod, type.ToString());
 
             Metods.Add(property, methods);
 
             return methods;
         }
 
-        public static void Set(Component component, string property, object value)
+        public static void Set(Component component, string property, Vector4 value, float tweenTime)
         {
             Methods methods;
             Metods.TryGetValue(property, out methods);
             if (methods == null) methods = CreateMethod(component, property);
 
-            if (methods == null || property != "localPosition")
+            if (methods == null)
             {
-                // throw
+                Debug.LogError("No setter or getter found for " + property + " of the " + component.gameObject.name + ".");
                 return;
             }
 
-            /*if (!_isCoroutineActive)
+            switch (methods.Type)
             {
-                _mb.StartCoroutine(TweenCoroutine());
+                case "float":
+                    DOTween
+                        .To(() => Getter<float>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] { (object)newValue }),
+                            value.x,
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                case "double":
+                    DOTween
+                        .To(() => Getter<double>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] {(object) newValue}),
+                            value.x,
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                case "int":
+                    DOTween
+                        .To(() => Getter<int>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] {(object) newValue}),
+                            (int)value.x,
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                case "uint":
+                    DOTween
+                        .To(() => Getter<uint>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] {(object) newValue}),
+                            (uint)value.x,
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                case "long":
+                    DOTween
+                        .To(() => Getter<long>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] {(object) newValue}),
+                            (long)value.x,
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                case "ulong":
+                    DOTween
+                        .To(() => Getter<ulong>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] {(object) newValue}),
+                            (ulong)value.x,
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                case "Vector2":
+                    DOTween
+                        .To(() => Getter<Vector2>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] {(object) newValue}),
+                            value,
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                case "Vector3":
+                    DOTween
+                        .To(() => Getter<Vector3>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] {(object) newValue}),
+                            value,
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                case "Vector4":
+                    DOTween
+                        .To(() => Getter<Vector4>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] {(object) newValue}),
+                            value,
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                case "Rect":
+                    DOTween
+                        .To(() => Getter<Rect>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] {(object) newValue}),
+                            new Rect(value.x, value.y, value.z, value.w),
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                case "RectOffset":
+                    DOTween
+                        .To(() => Getter<RectOffset>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] { (object)newValue }),
+                            new RectOffset((int)value.x, (int)value.y, (int)value.z, (int)value.w),
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                case "Color":
+                    DOTween
+                        .To(() => Getter<Color>(component, methods),
+                            newValue => methods.Set.Invoke(component, new[] { (object)newValue }),
+                            value,
+                            tweenTime)
+                        .SetEase(Ease.OutExpo)
+                        .SetAutoKill();
+                    break;
+
+                default:
+                    Debug.LogError(methods.Type + " type is not suported.");
+                    return;
+
             }
-
-            var tween = new TweenStruct(methods, methods.Get.Invoke(component, null), value, 5);*/
-            //PropertiesInTween.Add(component, tween);
-
-            ;
-
-            //Delegate k = Delegate.CreateDelegate(typeof(DOGetter<>).MakeGenericType(methods.Get.DeclaringType), methods.Get);
-            //var s = Delegate.CreateDelegate(typeof(DOSetter<>).MakeGenericType(methods.Set.DeclaringType), methods.Set);
-
-            DOGetter<Vector3> getter = () => (Vector3)methods.Get.Invoke(component, null);
-            DOSetter<Vector3> setter = newValue => { methods.Set.Invoke(component, new[] {(object) newValue}); };
-            DOTween.To(() => Vector3.zero, newValue => { ; }, Vector3.zero, 1);
-
-            //(Vector3)methods.Set.Invoke(component, new []{ (object)x }), (Vector3)value, 5)
-            DOTween
-                .To(getter, setter, Vector3.zero, 4)
-                .SetEase(Ease.OutExpo)
-                .SetAutoKill();
-
         }
 
-       /* private static IEnumerator TweenCoroutine()
+        private static T Getter<T>(Component component, Methods methods)
         {
-            _isCoroutineActive = true;
-
-            while (PropertiesInTween.Count != 0)
-            {
-                //Tween
-                foreach (var kvp in PropertiesInTween)
-                {
-                    var value = kvp.Value;
-
-                    value.Methods.Set.Invoke(kvp.Key, new[] {value.NewValue});
-                }
-
-                yield return null;
-            }
-
-            _isCoroutineActive = false;
+            return (T) methods.Get.Invoke(component, null);
         }
 
-        public class TweenStruct
-        {
-            public readonly Methods Methods;
-            public readonly object OldValue;
-            public readonly object NewValue;
-            public float TimeToTween;
-
-            public object CurrentValue;
-
-            public TweenStruct(Methods methods, object oldValue, object newValue, float timeToTween)
-            {
-                Methods = methods;
-                OldValue = oldValue;
-                NewValue = newValue;
-                TimeToTween = timeToTween;
-            }
-        }*/
-
-        public class Methods
+        private class Methods
         {
             public readonly MethodInfo Get;
             public readonly MethodInfo Set;
 
-            public Methods(MethodInfo get, MethodInfo set)
+            public readonly string Type;
+
+            public Methods(MethodInfo get, MethodInfo set, string type)
             {
                 Get = get;
                 Set = set;
+                Type = type;
             }
         }
     }

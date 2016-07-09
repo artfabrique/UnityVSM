@@ -12,17 +12,17 @@ namespace Revenga.VSM
             if (Input.GetKeyDown(KeyCode.Alpha1))
             {
                 Debug.Log("1");
-                UIReflectionSystem.Set(victim, "localPosition", Vector3.zero);
+                //UIReflectionSystem.Set(victim, "localPosition", Vector3.zero, 5);
             }
             else if (Input.GetKeyDown(KeyCode.Alpha2))
             {
                 Debug.Log("2");
-                UIReflectionSystem.Set(victim, "localPosition", Vector3.one);
+                //UIReflectionSystem.Set(victim, "localPosition", Vector3.one, 5);
             }
             else if (Input.GetKeyDown(KeyCode.Alpha3))
             {
                 Debug.Log("3");
-                UIReflectionSystem.Set(victim, "localPosition", Vector3.up);
+                //UIReflectionSystem.Set(victim, "localPosition", Vector3.up, 5);
             }
         }
     }
