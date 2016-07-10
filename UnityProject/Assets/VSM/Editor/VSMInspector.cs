@@ -13,7 +13,7 @@ namespace Revenga.VSM
     [CustomEditor(typeof (ViewStateController), true)]
     public class ViewStateControllerInspector : Editor
     {
-        private static string DirectorySeparatorChar = "/";
+        private const string DirectorySeparatorChar = "/";
 
         public static ViewStateControllerInspector Instance;
 
@@ -23,15 +23,15 @@ namespace Revenga.VSM
         private VSMList _cachedVsmList;
 
         //Constants
-        private string ManagersListNamePrefix = "VSM_";
-        private string ManagerNamePrefix = "VSM_";
+        private const string ManagersListNamePrefix = "VSM_";
+        private const string ManagerNamePrefix = "VSM_";
 
-        private string TagFunctionName = "StateTag";
+        private const string TagFunctionName = "StateTag";
 
-        private string RssFolder; // = "Assets"+ DirectorySeparatorChar + "Resources"+ DirectorySeparatorChar;
-        private string TrashFolder; // = "Deleted" + DirectorySeparatorChar;
-        private string GeneratedFolder = "Generated" + DirectorySeparatorChar;
-        private string DataFolder = "VSM" + DirectorySeparatorChar;
+        private string _rssFolder; // = "Assets"+ DirectorySeparatorChar + "Resources"+ DirectorySeparatorChar;
+        private string _trashFolder; // = "Deleted" + DirectorySeparatorChar;
+        private const string GeneratedFolder = "Generated" + DirectorySeparatorChar;
+        private const string DataFolder = "VSM" + DirectorySeparatorChar;
 
         private string _dataAssetPath = "";
 
@@ -41,12 +41,16 @@ namespace Revenga.VSM
 
             if (!SetupNeeded())
             {
-                RssFolder = EditorPrefs.GetString("VSMCONFIG_RssFolder") + DirectorySeparatorChar;
-                TrashFolder = EditorPrefs.GetString("VSMCONFIG_TrashFolder") + DirectorySeparatorChar;
+                _rssFolder = EditorPrefs.GetString("VSMCONFIG_RssFolder") + DirectorySeparatorChar;
+                _trashFolder = EditorPrefs.GetString("VSMCONFIG_TrashFolder") + DirectorySeparatorChar;
             }
-            
 
             _controller = target as ViewStateController;
+            if (_controller == null)
+            {
+                Debug.Log("VSM: No ViewStateController component. Aborting");
+                return;
+            }
             _animator = _controller.GetComponent<Animator>();
             if (_animator == null)
             {
@@ -58,7 +62,7 @@ namespace Revenga.VSM
 
             if (_controller.VsmData != null)
             {
-                _dataAssetPath = RssFolder + DataFolder + _controller.VsmData.ListName + ".asset";
+                _dataAssetPath = _rssFolder + DataFolder + _controller.VsmData.ListName + ".asset";
                 
             }
             SetAllKeyframesToConstant();
@@ -66,30 +70,24 @@ namespace Revenga.VSM
             RefreshCachedData();
         }
 
-
         protected void OnDestroy()
         {
             Instance = null;
         }
+
         private void Initialize()
         {
 
-            _controller.VsmList = new VSMList();
-            _controller.VsmList.ViewStateManagers = new List<VSMManager>();
+            _controller.VsmList = new VSMList {ViewStateManagers = new List<VSMManager>()};
 
             CreateAnimatorControllerAsset();
             CreateDataAsset();
         }
 
-
-
-
-
-
-
         //================================
         // INSPECTOR GUI
         //================================
+
         public override void OnInspectorGUI()
         {
             //DrawDefaultInspector();
@@ -120,9 +118,6 @@ namespace Revenga.VSM
                 //if (GUILayout.Button("Clone...")) CloneManagerFromFile();
                 if (GUILayout.Button("Create from *.anim")) ImportManager();
                 EditorGUILayout.EndHorizontal();
-
-
-
             }
             else
             {
@@ -137,6 +132,7 @@ namespace Revenga.VSM
 
             return needSetup;
         }
+
         public bool DrawViewStateManagers()
         {
             if(_cachedVsmList == null || _cachedVsmList.ViewStateManagers.Count == 0) return false;
@@ -174,7 +170,7 @@ namespace Revenga.VSM
 
                     EditorGUILayout.BeginHorizontal();
                     GUILayout.Space(VSMEditorTools.SpaceH);
-                    if (GUILayout.Button("Bake Manager States")) BakeManagerStates(originalManager);
+                    if (GUILayout.Button("Bake Manager SwitchIntoState")) BakeManagerStates(originalManager);
                     GUILayout.Space(VSMEditorTools.SpaceH);
                     EditorGUILayout.EndHorizontal();
 
@@ -195,6 +191,7 @@ namespace Revenga.VSM
             }
             return true;
         }
+
         private void DrawStates(VSMManager currentManager, VSMManager originalManager)
         {
             if (currentManager.States == null) currentManager.States = new List<VSMState>();
@@ -254,7 +251,6 @@ namespace Revenga.VSM
             if (GUILayout.Button("New State")) CreateNewState(currentManager, originalManager);
             EditorGUILayout.EndHorizontal();
             GUILayout.Space(VSMEditorTools.SpaceH);
-            
         }
 
    
@@ -291,12 +287,12 @@ namespace Revenga.VSM
             if (_animatorController == null)
             {
                 var animatorControllerName = ManagerNamePrefix+StripStringForFileName(_controller.gameObject.name);
-                if (!Directory.Exists(RssFolder + DataFolder))
+                if (!Directory.Exists(_rssFolder + DataFolder))
                 {
-                    AssetDatabase.CreateFolder(RssFolder.TrimEnd('/'), DataFolder.TrimEnd('/'));
+                    AssetDatabase.CreateFolder(_rssFolder.TrimEnd('/'), DataFolder.TrimEnd('/'));
                     AssetDatabase.SaveAssets();
                 }
-                _animatorController = AnimatorController.CreateAnimatorControllerAtPath(RssFolder + DataFolder + animatorControllerName + ".controller");
+                _animatorController = AnimatorController.CreateAnimatorControllerAtPath(_rssFolder + DataFolder + animatorControllerName + ".controller");
                 _animator.runtimeAnimatorController = _animatorController;
                 Debug.Log("VSM: Created AnimatorController and added link to Animator component..");
             }
@@ -332,28 +328,25 @@ namespace Revenga.VSM
                 animationClip.frameRate = 10f;
                 animationClip.wrapMode = WrapMode.ClampForever;
                 animationClip.name = currentManager.ManagerName;
-                string animationClipAssetPath = RssFolder + DataFolder + animationClip.name + ".anim";
+                string animationClipAssetPath = _rssFolder + DataFolder + animationClip.name + ".anim";
                 AssetDatabase.CreateAsset(animationClip, animationClipAssetPath);
                 AssetDatabase.ImportAsset(animationClipAssetPath);
-                currentManager.AnimationClipName = animationClip.name;
-            }
-            else
-            {
-                currentManager.AnimationClipName = currentManager.ManagerName;
             }
 
             if (AssetDatabase.GetAssetPath(_animatorController) != "")
                 AssetDatabase.AddObjectToAsset(al.stateMachine, AssetDatabase.GetAssetPath(_animatorController));
         }
+
         private AnimationClip LoadManagerAnimationClip(VSMManager currentManager)
         {
-            AnimationClip ac =AssetDatabase.LoadAssetAtPath<AnimationClip>(RssFolder + DataFolder + currentManager.ManagerName + ".anim");
+            AnimationClip ac =AssetDatabase.LoadAssetAtPath<AnimationClip>(_rssFolder + DataFolder + currentManager.ManagerName + ".anim");
             if (ac == null)
             {
-                Debug.LogError(string.Format("VSM: Error: Can not load animation clip for manager '{0}' at path '{1}'",currentManager.ManagerName, RssFolder + DataFolder + currentManager.ManagerName + ".anim"));
+                Debug.LogError(string.Format("VSM: Error: Can not load animation clip for manager '{0}' at path '{1}'",currentManager.ManagerName, _rssFolder + DataFolder + currentManager.ManagerName + ".anim"));
             }
             return ac;
         }
+
         private void CreateAnimatorState(VSMManager currentManager, VSMState currentState)
         {
             // Check if there is an animator layer fot that manager and the index is right..
@@ -629,32 +622,32 @@ namespace Revenga.VSM
                             
                         switch (typeName)
                         {
-                            case "Color":
-                                property.O = CreateInstanceByType<Color>(property.O, type, fieldName, stateKey.value);
-                                property.T = VSMStateProperty.VSMStatePropertyType.Color;
-                                break;
-
                             case "Vector2":
                                 property.O = CreateInstanceByType<Vector2>(property.O, type, fieldName, stateKey.value);
-                                property.T = VSMStateProperty.VSMStatePropertyType.Vector2;
                                 break;
 
                             case "Vector3":
                                 property.O = CreateInstanceByType<Vector3>(property.O, type, fieldName, stateKey.value);
-                                property.T = VSMStateProperty.VSMStatePropertyType.Vector3;
                                 break;
 
                             case "Vector4":
                                 property.O = CreateInstanceByType<Vector4>(property.O, type, fieldName, stateKey.value);
-                                property.T = VSMStateProperty.VSMStatePropertyType.Vector4;
                                 break;
 
-                            case "Quaternion":
-                                property.O = CreateInstanceByType<Quaternion>(property.O, type, fieldName, stateKey.value);
-                                property.T = VSMStateProperty.VSMStatePropertyType.EulerAngles;
+                            case "Rect":
+                                property.O = CreateInstanceByType<Rect>(property.O, type, fieldName, stateKey.value);
+                                break;
+
+                            case "RectOffset":
+                                property.O = CreateInstanceByType<Rect>(property.O, type, fieldName, stateKey.value);
+                                break;
+
+                            case "Color":
+                                property.O = CreateInstanceByType<Color>(property.O, type, fieldName, stateKey.value);
                                 break;
 
                             default:
+                                Debug.LogError(typeName + " not suported. Skiping...");
                                 continue;
                         }
                            
@@ -663,7 +656,6 @@ namespace Revenga.VSM
                     {
                         property.N = binding.propertyName;
                         property.O = new Vector4(stateKey.value, 0);
-                        property.T = VSMStateProperty.VSMStatePropertyType.Float;
                     }
                     
                     property.C = binding.type.ToString();
@@ -673,25 +665,7 @@ namespace Revenga.VSM
                         state.Properties.Add(property);
                     }
                 }
-                
             }
-
-            /*for (int j = 0; j < objectCurveBindingsList.Count; j++)
-            {
-                EditorCurveBinding binding = objectCurveBindingsList[j];
-                ObjectReferenceKeyframe[] curveKeys = AnimationUtility.GetObjectReferenceCurve(ac, binding);
-                VSMStateProperty propery = new VSMStateProperty();
-                propery.P = binding.path;
-                propery.N = binding.propertyName;
-                propery.T = VSMStateProperty.VSMStatePropertyType.Object;
-
-                if (curveKeys.Any(x => Math.Abs(x.time - state.Time) < float.Epsilon))
-                {
-                    ObjectReferenceKeyframe stateKey = curveKeys.FirstOrDefault(x => Math.Abs(x.time - state.Time) < float.Epsilon);
-                    propery.O = stateKey.value;
-                }
-                state.Properties.Add(propery);
-            }*/
         }
 
         private static Vector4 CreateInstanceByType<T>(object obj, Type myType, string fieldName, float value)
@@ -699,6 +673,19 @@ namespace Revenga.VSM
             if(obj == null) obj = (T)Activator.CreateInstance(myType);
             var info = myType.GetField(fieldName);
             info.SetValue(obj, value);
+
+            if (typeof(T) == typeof(Rect))
+            {
+                var rect = (Rect) obj;
+                return new Vector4(rect.x, rect.y, rect.width, rect.height);
+            }
+
+            if (typeof (T) == typeof (RectOffset))
+            {
+                var rectOffset = (RectOffset)obj;
+                return new Vector4(rectOffset.left, rectOffset.right, rectOffset.top, rectOffset.bottom);
+            }
+
             return (Vector4)obj;
         }
 
@@ -712,6 +699,7 @@ namespace Revenga.VSM
             }
             return animationLayer;
         }
+
         private void UpdateAllStatemachineLayouts()
         {
             if(_controller.VsmList==null || _controller.VsmList.ViewStateManagers.Count==0) return;
@@ -740,12 +728,7 @@ namespace Revenga.VSM
                 AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath(_animatorController));
             }
         }
-
-
-
-
-
-
+        
         //==============================
         // MANAGER OPERATIONS
         //==============================
@@ -770,6 +753,7 @@ namespace Revenga.VSM
             UpdateDataAsset();
             return vsmManager;
         }
+
         private void DeleteManager(VSMManager currentManager)
         {
             if (
@@ -792,12 +776,12 @@ namespace Revenga.VSM
 
             DeleteAnimatorLayer(originalManager);
 
-            if (!AssetDatabase.IsValidFolder(TrashFolder + DataFolder.TrimEnd('/')))
+            if (!AssetDatabase.IsValidFolder(_trashFolder + DataFolder.TrimEnd('/')))
             {
                 Debug.Log("VSM: Creating Trash folder: " + originalManager.ManagerName);
-                AssetDatabase.CreateFolder(TrashFolder.TrimEnd('/'), DataFolder.TrimEnd('/'));
+                AssetDatabase.CreateFolder(_trashFolder.TrimEnd('/'), DataFolder.TrimEnd('/'));
             }
-            var resultMoveAsset = AssetDatabase.MoveAsset(RssFolder + DataFolder + originalManager.ManagerName + ".anim", TrashFolder + DataFolder + originalManager.ManagerName + "_" + GetTimestamp() + ".anim");
+            var resultMoveAsset = AssetDatabase.MoveAsset(_rssFolder + DataFolder + originalManager.ManagerName + ".anim", _trashFolder + DataFolder + originalManager.ManagerName + "_" + GetTimestamp() + ".anim");
             if (!string.IsNullOrEmpty(resultMoveAsset))
             {
                 Debug.LogError("VSM: Error moving asset to trash:" + resultMoveAsset);
@@ -833,13 +817,12 @@ namespace Revenga.VSM
             }
 
             RenameAnimationLayer(originalManager, currentManager);
-            AssetDatabase.RenameAsset(RssFolder + DataFolder + originalManager.ManagerName + ".anim", currentManager.ManagerName);
+            AssetDatabase.RenameAsset(_rssFolder + DataFolder + originalManager.ManagerName + ".anim", currentManager.ManagerName);
 
             if (currentManager.ManagerName != originalManager.ManagerName)
             {
                 originalManager.ManagerName = currentManager.ManagerName;
             }
-            
 
             UpdateDataAsset();
         }
@@ -867,9 +850,9 @@ namespace Revenga.VSM
                 }
                 VSMManager manager = CreateManager(clip);
 
-                AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(clip), RssFolder + DataFolder + manager.ManagerName + ".anim");
+                AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(clip), _rssFolder + DataFolder + manager.ManagerName + ".anim");
                 AssetDatabase.SaveAssets();
-                AssetDatabase.ImportAsset(RssFolder + DataFolder + manager.ManagerName + ".anim");
+                AssetDatabase.ImportAsset(_rssFolder + DataFolder + manager.ManagerName + ".anim");
                 
                 // Create states from clip
                 AnimationEvent[] stateTags = clip.events.Where(x=>x.functionName == TagFunctionName).ToArray();
@@ -880,13 +863,10 @@ namespace Revenga.VSM
                     if (string.IsNullOrEmpty(vsmState.Id))
                         vsmState.Id = Guid.NewGuid().ToString();
                     vsmState.StateName = stateTags[i].stringParameter;
-                    vsmState.AnimationClipName = manager.AnimationClipName;
                     manager.States.Add(vsmState);
 
                     CreateAnimatorState(manager, vsmState);
-                    
                 }
-
                 UpdateDataAsset();
             }
         }
@@ -935,7 +915,6 @@ namespace Revenga.VSM
 
                     state.Time = e.time;
                 }
-                
             }
         }
 
@@ -951,23 +930,16 @@ namespace Revenga.VSM
             return originalManager;
         }
 
-
-
-
-
-
-
-
         //==============================
         // STATES OPERATIONS
         //==============================
+
         private void CreateNewState(VSMManager currentManager, VSMManager originalManager)
         {
             VSMState vsmState = new VSMState();
             if (string.IsNullOrEmpty(vsmState.Id))
                 vsmState.Id = Guid.NewGuid().ToString();
             vsmState.StateName = "State_" + GetTimestamp();
-            vsmState.AnimationClipName = currentManager.AnimationClipName;
             originalManager.States.Add(vsmState);
 
             CreateAnimatorState(originalManager, vsmState);
@@ -1011,26 +983,23 @@ namespace Revenga.VSM
             UpdateDataAsset();
         }
 
-        
-
-
-
         //==============================
         // DATA ASSET OPERATIONS
         //==============================
+
         private void CreateDataAsset()
         {
             Debug.Log("VSM: CreateDataAsset()");
             if (_controller.VsmData != null)
             {
-                _dataAssetPath = RssFolder + DataFolder + _controller.VsmData.ListName + ".asset";
+                _dataAssetPath = _rssFolder + DataFolder + _controller.VsmData.ListName + ".asset";
                 return;
             }
 
             _controller.VsmData = CreateInstance<VSMData>();
             _controller.VsmData.ListName = ManagersListNamePrefix + StripStringForFileName(_controller.gameObject.name);
 
-            _dataAssetPath = RssFolder + DataFolder + _controller.VsmData.ListName + ".asset";
+            _dataAssetPath = _rssFolder + DataFolder + _controller.VsmData.ListName + ".asset";
 
             AssetDatabase.CreateAsset(_controller.VsmData, _dataAssetPath);
             AssetDatabase.ImportAsset(_dataAssetPath, ImportAssetOptions.ForceUncompressedImport);
@@ -1066,6 +1035,7 @@ namespace Revenga.VSM
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
+
         protected void RefreshCachedData()
         {
             if (_controller.VsmData == null || _controller.VsmList == null)
@@ -1079,15 +1049,10 @@ namespace Revenga.VSM
             Repaint();
         }
 
-
-
-
-
-
-
         //==============================
         // UTILS
         //==============================
+
         private int GetTimestamp()
         {
             DateTime epochStart = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -1099,7 +1064,6 @@ namespace Revenga.VSM
             if (string.IsNullOrEmpty(s)) return null;
             return s.Replace(" ", "_").Replace(",", "_");
         }
-
 
         private void RegenerateCode()
         {
@@ -1131,18 +1095,6 @@ namespace Revenga.VSM
 
             AssetDatabase.ImportAsset(localPath + GeneratedFolder + _controller.VsmData.ListName + ".cs");
             AssetDatabase.Refresh();
-            
         }
-
-
-
-
-        //========================
-        // STYLES
-        //========================
-
     }
-
-    
-  
 }

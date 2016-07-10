@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Assets.VSM.Scripts;
+using DG.Tweening;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,7 +16,7 @@ namespace Revenga.VSM
         [SerializeField] public VSMData VsmData;
         [NonSerialized] public VSMList VsmList;
         
-        private DelayedSwitchData _delayedData;
+        public DelayedSwitchData _delayedData;
         private bool _initialized;
         private Animator _animatorRef;
         private bool _wasEnabled;
@@ -141,30 +143,67 @@ namespace Revenga.VSM
                             Debug.LogWarning("Component " + property.C + " not found on " + property.P);
                             continue;
                         }
-
-                        UIReflectionSystem.Set(tmpC, property.N, Vector3.zero);
-
-                        var tmpSO = new SerializedObject(tmpC);
-
-                        switch (property.T)
-                        {
-                            case VSMStateProperty.VSMStatePropertyType.Float:
-
-                                // DO SOMETHING NOW WE HAVE PROPERTY BINDING!
-
-                                var tmpSp = tmpSO.FindProperty(property.N);
-
-
-                                //tmpSp.vector3Value = property.V;
-
-                                tmpSp.serializedObject.ApplyModifiedProperties();
-
-                                //Debug.Log(tmpSp.vector3Value + "|" + property.V);
-
-
-                                break;
-                        }
                     }
+                }
+            }
+
+            UIReflectionSystem.TestStateController = this;
+        }
+
+        public void SwitchIntoState(string managerName, string stateName, float time, Ease ease)
+        {
+            if (!_initialized)
+            {
+                Debug.LogError(string.Format(VSMError.VSMNotInitialized, managerName, stateName));
+                return;
+            }
+
+            if (VsmList.ViewStateManagers.All(x => x.ManagerName != managerName))
+            {
+                Debug.LogError(string.Format(VSMError.StateManagerNotFound, managerName, stateName));
+                return;
+            }
+
+            VSMManager vsmManager = VsmList.ViewStateManagers.FirstOrDefault(x => x.ManagerName == managerName);
+            if (vsmManager != null)
+            {
+                VSMState targetState = vsmManager.States.FirstOrDefault(x => x.StateName == stateName);
+                if (targetState == null)
+                {
+                    Debug.LogError(string.Format(VSMError.StateNotFound, managerName, stateName));
+                    return;
+                }
+
+                if (!_animatorRef)
+                {
+                    Debug.LogError(string.Format(VSMError.CanNotFindAnimator, managerName, stateName));
+                    return;
+                }
+
+                foreach (VSMStateProperty property in targetState.Properties)
+                {
+                    var tmpTr = gameObject.transform.FindChild(property.P);
+                    if (tmpTr == null)
+                    {
+                        Debug.LogWarning(property.P + " not found ");
+                        continue;
+                    }
+
+                    var tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);
+                    if (tmpType == null)
+                    {
+                        Debug.LogWarning("Component " + property.C + " not found on " + property.P);
+                        continue;
+                    }
+
+                    var tmpC = tmpTr.gameObject.GetComponent(tmpType);
+                    if (tmpC == null)
+                    {
+                        Debug.LogWarning("Component " + property.C + " not found on " + property.P);
+                        continue;
+                    }
+
+                    UIReflectionSystem.Tween(tmpC, property.N, property.O, time, ease);
                 }
             }
         }

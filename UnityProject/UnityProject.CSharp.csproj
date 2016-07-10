@@ -92,6 +92,7 @@
     <Compile Include="Assets\VSM\Scripts\Core\VSMManager.cs" />
     <Compile Include="Assets\VSM\Scripts\Core\VSMState.cs" />
     <Compile Include="Assets\VSM\Scripts\Generated\VSM_Container.cs" />
+    <Compile Include="Assets\VSM\Scripts\Generated\VSM_Directional_Light.cs" />
     <Compile Include="Assets\VSM\Scripts\TestUpdate.cs" />
     <Compile Include="Assets\VSM\Scripts\UIReflectionSystem.cs" />
     <Compile Include="Assets\VSM\Scripts\Utils\Assembly\AssemblyTypeDefinition.cs" />

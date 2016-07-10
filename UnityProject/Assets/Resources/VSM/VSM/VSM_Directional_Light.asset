@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7e1628cb1205424c9a6e31d40b60539, type: 3}
+  m_Name: VSM_Directional_Light
+  m_EditorClassIdentifier: 
+  ListName: VSM_Directional_Light
+  Data: '{"ViewStateManagers":[{"Id":"ed81af1b-3f45-4949-a873-8456d6133c54","ManagerName":"VSM_Directional_Light_1468104656","CurrentStateName":"","DefaultStateName":"State_1468104661","LayerIndex":1,"States":[{"Id":"474e0b80-3c68-4aaf-a963-088666d03231","StateName":"T0","Time":0.0,"Properties":[{"N":"localPosition","P":"","O":{"x":0.0,"y":3.0,"z":0.0,"w":0.0},"C":"UnityEngine.Transform"},{"N":"eulerAngles","P":"","O":{"x":50.0,"y":-30.0,"z":0.0,"w":0.0},"C":"UnityEngine.Transform"},{"N":"color","P":"","O":{"x":1.0,"y":0.7317073345184326,"z":0.0,"w":1.0},"C":"UnityEngine.Light"}]},{"Id":"6c6a4e2b-4377-4553-a249-79f1f779ce3e","StateName":"T1","Time":0.10000000149011612,"Properties":[{"N":"localPosition","P":"","O":{"x":5.900000095367432,"y":7.559999942779541,"z":6.039999961853027,"w":0.0},"C":"UnityEngine.Transform"},{"N":"eulerAngles","P":"","O":{"x":56.02001190185547,"y":5.099999904632568,"z":9.790000915527344,"w":0.0},"C":"UnityEngine.Transform"},{"N":"color","P":"","O":{"x":0.7317073345184326,"y":0.0,"z":0.0,"w":1.0},"C":"UnityEngine.Light"}]},{"Id":"49117d67-9212-4324-9a9c-4b974c5a3942","StateName":"T2","Time":0.20000000298023225,"Properties":[{"N":"localPosition","P":"","O":{"x":50.2400016784668,"y":56.709999084472659,"z":30.84000015258789,"w":0.0},"C":"UnityEngine.Transform"},{"N":"color","P":"","O":{"x":0.0,"y":0.7317073345184326,"z":0.06560134142637253,"w":1.0},"C":"UnityEngine.Light"}]}]}]}'

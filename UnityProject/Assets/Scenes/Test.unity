@@ -122,9 +122,9 @@ Animator:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 873775505}
-  m_Enabled: 0
+  m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 2e837496fd661b844ac3346c9fde77d5, type: 2}
+  m_Controller: {fileID: 9100000, guid: 39368e4566b44c0429035bac901114cf, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -143,7 +143,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 192a4d65943b43b46935f6b31592f9d0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  VsmData: {fileID: 11400000, guid: acf2f7880de7eb04c843c86ff5ce03c0, type: 2}
+  VsmData: {fileID: 11400000, guid: f8e426bfd469cff4abfe11ced41ba999, type: 2}
 --- !u!108 &873775509
 Light:
   m_ObjectHideFlags: 0
@@ -186,7 +186,7 @@ Transform:
   m_LocalRotation: {x: 0.40821794, y: -0.23456973, z: 0.109381676, w: 0.87542605}
   m_LocalPosition: {x: 0, y: 3, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: 74.1, y: 62, z: 23.31}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
