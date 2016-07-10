@@ -13,18 +13,18 @@ namespace Revenga.VSM
         {
             if (Input.GetKeyDown(KeyCode.Alpha1))
             {
-                Debug.Log("0");
-                UIReflectionSystem.TestStateController.SwitchIntoState(UIReflectionSystem.TestStateController.VsmList.ViewStateManagers.First().ManagerName, "T0", 3, Ease.InExpo);
+                //Debug.Log("0");
+                UIReflectionSystem.TestStateController.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.Bl.ToString(), 0.2f, Ease.OutExpo);
             }
             else if (Input.GetKeyDown(KeyCode.Alpha2))
             {
-                Debug.Log("1");
-                UIReflectionSystem.TestStateController.SwitchIntoState(UIReflectionSystem.TestStateController.VsmList.ViewStateManagers.First().ManagerName, "T1", 3, Ease.InExpo);
+                //Debug.Log("1");
+                UIReflectionSystem.TestStateController.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.G.ToString(),0.2f, Ease.OutExpo);
             }
             else if (Input.GetKeyDown(KeyCode.Alpha3))
             {
-                Debug.Log("2");
-                UIReflectionSystem.TestStateController.SwitchIntoState(UIReflectionSystem.TestStateController.VsmList.ViewStateManagers.First().ManagerName, "T2", 3, Ease.InExpo);
+                //Debug.Log("2");
+                UIReflectionSystem.TestStateController.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.Red.ToString(), 0.2f, Ease.OutExpo);
             }
         }
     }

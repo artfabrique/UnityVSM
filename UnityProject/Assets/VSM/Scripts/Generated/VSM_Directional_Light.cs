@@ -8,13 +8,13 @@ public static class VSM_Directional_Light
 {
     public enum Managers 
     {
-        VSM_Directional_Light_1468104656,
+        VSM_Directional_Light_ColorPos,
     }
 
-    public enum VSM_Directional_Light_1468104656
+    public enum VSM_Directional_Light_ColorPos
     {
-        T0,
-        T1,
-        T2,
+        Red,
+        G,
+        Bl,
     }
 }

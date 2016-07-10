@@ -1,6 +1,8 @@
 fileFormatVersion: 2
 guid: 2e837496fd661b844ac3346c9fde77d5
-timeCreated: 1467897599
+labels:
+- VSM_Directional_Light_ColorPos
+timeCreated: 1468188330
 licenseType: Pro
 NativeFormatImporter:
   userData: 
