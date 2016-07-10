@@ -564,7 +564,7 @@ namespace Revenga.VSM
             // Get curve bindings to objects and get curve keyframes
             AnimationClip ac = animatorState.motion as AnimationClip;
             List<EditorCurveBinding> floatCurveBindingsList = AnimationUtility.GetCurveBindings(ac).ToList();
-            List<EditorCurveBinding> objectCurveBindingsList = AnimationUtility.GetObjectReferenceCurveBindings(ac).ToList();
+            //List<EditorCurveBinding> objectCurveBindingsList = AnimationUtility.GetObjectReferenceCurveBindings(ac).ToList();
 
             //List<Keyframe> stateKeyframes = new List<Keyframe>();
 

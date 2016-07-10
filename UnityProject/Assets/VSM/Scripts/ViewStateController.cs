@@ -21,6 +21,7 @@ namespace Revenga.VSM
         private Animator _animatorRef;
         private bool _wasEnabled;
 
+        private readonly Dictionary<string, Component> Components = new Dictionary<string, Component>(); 
 
         public void SwitchTo(string managerName, string stateName, bool forceUpdate = true)
         {
@@ -123,6 +124,12 @@ namespace Revenga.VSM
                 {
                     foreach (VSMStateProperty property in state.Properties)
                     {
+                        var path = property.P + property.C;
+
+                        Component tmpC;
+                        Components.TryGetValue(path, out tmpC);
+                        if(tmpC != null) continue;
+
                         var tmpTr = gameObject.transform.FindChild(property.P);
                         if (tmpTr == null)
                         {
@@ -137,17 +144,17 @@ namespace Revenga.VSM
                             continue;
                         }
 
-                        var tmpC = tmpTr.gameObject.GetComponent(tmpType);
+                        tmpC = tmpTr.gameObject.GetComponent(tmpType);
                         if (tmpC == null)
                         {
                             Debug.LogWarning("Component " + property.C + " not found on " + property.P);
                             continue;
                         }
+
+                        Components.Add(path, tmpC);
                     }
                 }
             }
-
-            UIReflectionSystem.TestStateController = this;
         }
 
         public void SwitchIntoState(string managerName, string stateName, float time, Ease ease)
@@ -182,25 +189,32 @@ namespace Revenga.VSM
 
                 foreach (VSMStateProperty property in targetState.Properties)
                 {
-                    var tmpTr = gameObject.transform.FindChild(property.P);
-                    if (tmpTr == null)
-                    {
-                        Debug.LogWarning(property.P + " not found ");
-                        continue;
-                    }
+                    var path = property.P + property.C;
 
-                    var tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);
-                    if (tmpType == null)
-                    {
-                        Debug.LogWarning("Component " + property.C + " not found on " + property.P);
-                        continue;
-                    }
-
-                    var tmpC = tmpTr.gameObject.GetComponent(tmpType);
+                    Component tmpC;
+                    Components.TryGetValue(path, out tmpC);
                     if (tmpC == null)
                     {
-                        Debug.LogWarning("Component " + property.C + " not found on " + property.P);
-                        continue;
+                        var tmpTr = gameObject.transform.FindChild(property.P);
+                        if (tmpTr == null)
+                        {
+                            Debug.LogWarning(property.P + " not found ");
+                            continue;
+                        }
+
+                        var tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);
+                        if (tmpType == null)
+                        {
+                            Debug.LogWarning("Component " + property.C + " not found on " + property.P);
+                            continue;
+                        }
+
+                        tmpC = tmpTr.gameObject.GetComponent(tmpType);
+                        if (tmpC == null)
+                        {
+                            Debug.LogWarning("Component " + property.C + " not found on " + property.P);
+                            continue;
+                        }
                     }
 
                     UIReflectionSystem.Tween(tmpC, property.N, property.O, time, ease);

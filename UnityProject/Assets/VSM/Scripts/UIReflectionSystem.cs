@@ -9,7 +9,6 @@ namespace Assets.VSM.Scripts
     public static class UIReflectionSystem
     {
         private static readonly Dictionary<string, Methods> Metods = new Dictionary<string, Methods>();
-        public static ViewStateController TestStateController;
 
         public static void Tween(Component component, string property, Vector4 value, float tweenTime, Ease ease)
         {

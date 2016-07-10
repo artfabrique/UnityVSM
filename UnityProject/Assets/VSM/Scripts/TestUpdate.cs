@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Assets.VSM.Scripts;
 using DG.Tweening;
 using UnityEngine;
@@ -7,24 +8,39 @@ namespace Revenga.VSM
 {
     public class TestUpdate : MonoBehaviour
     {
-        private static Component victim;
+        public List<ViewStateController> TestStateController;
+
 
         private void Update()
         {
+            if (TestStateController.Count == 0)
+            {
+                TestStateController = FindObjectsOfType<ViewStateController>().ToList();
+            }
+
             if (Input.GetKeyDown(KeyCode.Alpha1))
             {
                 //Debug.Log("0");
-                UIReflectionSystem.TestStateController.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.Bl.ToString(), 0.2f, Ease.OutExpo);
+                foreach (var controller in TestStateController)
+                {
+                    controller.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.Bl.ToString(), 10, Ease.OutExpo);
+                }
             }
             else if (Input.GetKeyDown(KeyCode.Alpha2))
             {
                 //Debug.Log("1");
-                UIReflectionSystem.TestStateController.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.G.ToString(),0.2f, Ease.OutExpo);
+                foreach (var controller in TestStateController)
+                {
+                    controller.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.G.ToString(), 10, Ease.OutExpo);
+                }
             }
             else if (Input.GetKeyDown(KeyCode.Alpha3))
             {
                 //Debug.Log("2");
-                UIReflectionSystem.TestStateController.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.Red.ToString(), 0.2f, Ease.OutExpo);
+                foreach (var controller in TestStateController)
+                {
+                    controller.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.Red.ToString(), 10, Ease.OutExpo);
+                }
             }
         }
     }
