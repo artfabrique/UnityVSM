@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Assets.VSM.Scripts;
 using DG.Tweening;
-using UnityEditor;
+using DG.Tweening.Core;
 using UnityEngine;
 
 namespace Revenga.VSM
@@ -16,98 +15,17 @@ namespace Revenga.VSM
         [SerializeField] public VSMData VsmData;
         [NonSerialized] public VSMList VsmList;
         
-        public DelayedSwitchData _delayedData;
+        public DelayedSwitchData DelayedData;
         private bool _initialized;
         private Animator _animatorRef;
         private bool _wasEnabled;
-
-        private readonly Dictionary<string, Component> Components = new Dictionary<string, Component>(); 
-
-        public void SwitchTo(string managerName, string stateName, bool forceUpdate = true)
-        {
-            // Check for errors
-
-            if (!_initialized)
-            {
-                Debug.LogError(string.Format(VSMError.VSMNotInitialized, managerName, stateName));
-                return;
-            }
-
-            if (VsmList.ViewStateManagers.All(x => x.ManagerName != managerName))
-            {
-                Debug.LogError(string.Format(VSMError.StateManagerNotFound, managerName, stateName));
-                return;
-            }
-
-            VSMManager vsmManager = VsmList.ViewStateManagers.FirstOrDefault(x => x.ManagerName == managerName);
-            if (vsmManager != null)
-            {
-                VSMState targetState = vsmManager.States.FirstOrDefault(x => x.StateName == stateName);
-                if (targetState == null)
-                {
-                    Debug.LogError(string.Format(VSMError.StateNotFound, managerName, stateName));
-                    return;
-                }
-
-                if (!_animatorRef)
-                {
-                    Debug.LogError(string.Format(VSMError.CanNotFindAnimator, managerName, stateName));
-                    return;
-                }
-
-                //Cache call data if GameObject is not active or was not enabled yet.
-
-                if (!gameObject.activeInHierarchy || !gameObject.activeSelf || !_wasEnabled)
-                {
-                    Debug.LogWarning(string.Format(VSMError.AnimatiorDisabled, managerName, stateName));
-                    if (_delayedData == null) _delayedData = new DelayedSwitchData();
-                    _delayedData.Manager = managerName;
-                    _delayedData.State = stateName;
-                    _delayedData.ForceUpdate = forceUpdate;
-                }
-                else
-                {
-                    _delayedData = null;
-
-                    if (vsmManager.CurrentStateName == stateName && !forceUpdate) return;
-
-                    if (_animatorRef.parameters.All(x => x.name != "VSM_" + managerName))
-                    {
-                        Debug.LogError(string.Format(VSMError.CanNotFindSpeedParameter, managerName, stateName));
-                        return;
-                    }
-
-                    _animatorRef.SetFloat("VSM_" + managerName, 1f);
-                    _animatorRef.PlayInFixedTime(stateName, vsmManager.LayerIndex, targetState.Time);
-                    _animatorRef.Update(Time.time);
-                    _animatorRef.SetFloat("VSM_" + managerName, 0f);
-
-                    vsmManager.CurrentStateName = stateName;
-
-                    // Uncoment if you use NGUI
-                    /*
-                    if (gameObject.GetComponent<UIWidget>() != null)
-                    {
-                        gameObject.GetComponent<UIWidget>().SetDirty();
-                    }
-                    */
-
-                    VsmList.ViewStateManagers[VsmList.ViewStateManagers.FindIndex(x => x.ManagerName == managerName)] =
-                        vsmManager;
-                }
-            }
-        }
+        private readonly Dictionary<string, Component> _components = new Dictionary<string, Component>(); 
 
         public void ParseData()
         {
             if (VsmData != null && !string.IsNullOrEmpty(VsmData.Data))
             {
                 VsmList = JsonUtility.FromJson<VSMList>(VsmData.Data);
-
-                /*
-                if (VsmList!=null && VsmList.ViewStateManagers!=null)
-                    Debug.Log(String.Format(VSMMessage.DataParsedSuccessfully, gameObject.name,VsmList.ViewStateManagers.Count));
-                */
             }
             else
             {
@@ -127,7 +45,7 @@ namespace Revenga.VSM
                         var path = property.P + property.C;
 
                         Component tmpC;
-                        Components.TryGetValue(path, out tmpC);
+                        _components.TryGetValue(path, out tmpC);
                         if(tmpC != null) continue;
 
                         var tmpTr = gameObject.transform.FindChild(property.P);
@@ -151,7 +69,7 @@ namespace Revenga.VSM
                             continue;
                         }
 
-                        Components.Add(path, tmpC);
+                        _components.Add(path, tmpC);
                     }
                 }
             }
@@ -170,54 +88,67 @@ namespace Revenga.VSM
                 Debug.LogError(string.Format(VSMError.StateManagerNotFound, managerName, stateName));
                 return;
             }
-
-            VSMManager vsmManager = VsmList.ViewStateManagers.FirstOrDefault(x => x.ManagerName == managerName);
-            if (vsmManager != null)
+            if (!gameObject.activeInHierarchy || !gameObject.activeSelf || !_wasEnabled)
             {
-                VSMState targetState = vsmManager.States.FirstOrDefault(x => x.StateName == stateName);
-                if (targetState == null)
-                {
-                    Debug.LogError(string.Format(VSMError.StateNotFound, managerName, stateName));
-                    return;
-                }
+                Debug.LogWarning(string.Format(VSMError.AnimatiorDisabled, managerName, stateName));
+                if (DelayedData == null) DelayedData = new DelayedSwitchData();
+                DelayedData.Manager = managerName;
+                DelayedData.State = stateName;
+                DelayedData.Time = time;
+                DelayedData.EaseType = ease;
+            }
+            else
+            {
+                DelayedData = null;
 
-                if (!_animatorRef)
+                VSMManager vsmManager = VsmList.ViewStateManagers.FirstOrDefault(x => x.ManagerName == managerName);
+                if (vsmManager != null)
                 {
-                    Debug.LogError(string.Format(VSMError.CanNotFindAnimator, managerName, stateName));
-                    return;
-                }
-
-                foreach (VSMStateProperty property in targetState.Properties)
-                {
-                    var path = property.P + property.C;
-
-                    Component tmpC;
-                    Components.TryGetValue(path, out tmpC);
-                    if (tmpC == null)
+                    VSMState targetState = vsmManager.States.FirstOrDefault(x => x.StateName == stateName);
+                    if (targetState == null)
                     {
-                        var tmpTr = gameObject.transform.FindChild(property.P);
-                        if (tmpTr == null)
-                        {
-                            Debug.LogWarning(property.P + " not found ");
-                            continue;
-                        }
-
-                        var tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);
-                        if (tmpType == null)
-                        {
-                            Debug.LogWarning("Component " + property.C + " not found on " + property.P);
-                            continue;
-                        }
-
-                        tmpC = tmpTr.gameObject.GetComponent(tmpType);
-                        if (tmpC == null)
-                        {
-                            Debug.LogWarning("Component " + property.C + " not found on " + property.P);
-                            continue;
-                        }
+                        Debug.LogError(string.Format(VSMError.StateNotFound, managerName, stateName));
+                        return;
                     }
 
-                    UIReflectionSystem.Tween(tmpC, property.N, property.O, time, ease);
+                    if (!_animatorRef)
+                    {
+                        Debug.LogError(string.Format(VSMError.CanNotFindAnimator, managerName, stateName));
+                        return;
+                    }
+
+                    foreach (VSMStateProperty property in targetState.Properties)
+                    {
+                        var path = property.P + property.C;
+
+                        Component tmpC;
+                        _components.TryGetValue(path, out tmpC);
+                        if (tmpC == null)
+                        {
+                            var tmpTr = gameObject.transform.FindChild(property.P);
+                            if (tmpTr == null)
+                            {
+                                Debug.LogWarning(property.P + " not found ");
+                                continue;
+                            }
+
+                            var tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);
+                            if (tmpType == null)
+                            {
+                                Debug.LogWarning("Component " + property.C + " not found on " + property.P);
+                                continue;
+                            }
+
+                            tmpC = tmpTr.gameObject.GetComponent(tmpType);
+                            if (tmpC == null)
+                            {
+                                Debug.LogWarning("Component " + property.C + " not found on " + property.P);
+                                continue;
+                            }
+                        }
+
+                        Tween(tmpC, property.N, property.O, time, ease);
+                    }
                 }
             }
         }
@@ -243,23 +174,180 @@ namespace Revenga.VSM
         protected void OnEnable()
         {
             _wasEnabled = true;
-            if (_delayedData != null)
+            if (DelayedData != null)
             {
-                SwitchTo(_delayedData.Manager, _delayedData.State, _delayedData.ForceUpdate);
+                SwitchIntoState(DelayedData.Manager, DelayedData.State, DelayedData.Time, DelayedData.EaseType);
             }
         }
+
+        protected void OnDestroy()
+        {
+            
+        }
+
+        public void Tween(Component component, string property, Vector4 value, float tweenTime, Ease ease)
+        {
+            
+            UIReflectionSystem.Methods methods;
+            UIReflectionSystem.MetodInfos.TryGetValue(property, out methods);
+            if (methods == null) methods = UIReflectionSystem.CreateMethod(component, property);
+
+            if (methods == null)
+            {
+                Debug.LogError("No setter or getter found for " + property + " of the " + component.gameObject.name + ".");
+                return;
+            }
+
+            //List<object> Tweens = new List<object>();
+            var tmpTweenId = string.Concat(gameObject.GetInstanceID(), component.GetInstanceID(), property);
+
+            if (DOTween.IsTweening(tmpTweenId))
+                DOTween.Kill(tmpTweenId);
+
+            switch (methods.Type)
+            {
+                case "float":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<float>(component, methods),
+                            newValue => UIReflectionSystem.Setter(component, methods, newValue),
+                            value.x,
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                case "double":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<double>(component, methods),
+                            newValue => UIReflectionSystem.Setter(component, methods, newValue),
+                            value.x,
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                case "int":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<int>(component, methods),
+                            newValue => UIReflectionSystem.Setter(component, methods, newValue),
+                            (int)value.x,
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                case "uint":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<uint>(component, methods),
+                            newValue => UIReflectionSystem.Setter(component, methods, newValue),
+                            (uint)value.x,
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                case "long":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<long>(component, methods),
+                            newValue => UIReflectionSystem.Setter(component, methods, newValue),
+                            (long)value.x,
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                case "ulong":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<ulong>(component, methods),
+                            newValue => UIReflectionSystem.Setter(component, methods, newValue),
+                            (ulong)value.x,
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                case "Vector2":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<Vector2>(component, methods),
+                            newValue => UIReflectionSystem.Setter<Vector2>(component, methods, newValue),    // Explicit generic cast is important!
+                            value,
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                case "Vector3":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<Vector3>(component, methods),
+                            newValue => UIReflectionSystem.Setter<Vector3>(component, methods, newValue),    // Explicit generic cast is important!
+                            value,
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                case "Vector4":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<Vector4>(component, methods),
+                            newValue => UIReflectionSystem.Setter<Vector4>(component, methods, newValue),    // Explicit generic cast is important!
+                            value,
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                case "Rect":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<Rect>(component, methods),
+                            newValue => UIReflectionSystem.Setter(component, methods, newValue),
+                            new Rect(value.x, value.y, value.z, value.w),
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                case "RectOffset":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<RectOffset>(component, methods),
+                            newValue => UIReflectionSystem.Setter(component, methods, newValue),
+                            new RectOffset((int)value.x, (int)value.y, (int)value.z, (int)value.w),
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                case "Color":
+                    DOTween
+                        .To(() => UIReflectionSystem.Getter<Color>(component, methods),
+                            newValue => UIReflectionSystem.Setter<Color>(component, methods, newValue),    // Explicit generic cast is important!
+                            value,
+                            tweenTime)
+                        .SetEase(ease)
+                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                    break;
+
+                default:
+                    UIReflectionSystem.Setter<Color>(component, methods, value);
+                    Debug.LogError(methods.Type + " type is not suported.");
+                    return;
+
+            }
+        }
+
+
 
         protected void OnDisable()
         {
             _wasEnabled = false;
-            _delayedData = null;
+            DelayedData = null;
         }
 
         public class DelayedSwitchData
         {
             public string Manager;
             public string State;
-            public bool ForceUpdate;
+            public float Time;
+            public Ease EaseType;
         }
 
         public void StateTag(string stateName)

@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7e1628cb1205424c9a6e31d40b60539, type: 3}
+  m_Name: VSM_ExampleCube
+  m_EditorClassIdentifier: 
+  ListName: VSM_ExampleCube
+  Data: '{"ViewStateManagers":[{"Id":"e2fc5699-3495-4117-af91-e32a9a5f5af7","ManagerName":"VSM_ExampleCube_Test","CurrentStateName":"","DefaultStateName":"Red","LayerIndex":1,"States":[{"Id":"6fa6f272-5533-4c76-8b0a-3668929aa311","StateName":"Red","Time":0.0,"Properties":[{"N":"localPosition","P":"","O":{"x":1.2799999713897706,"y":0.0,"z":-1.6100000143051148,"w":0.0},"C":"UnityEngine.Transform"},{"N":"eulerAngles","P":"","O":{"x":-8.973400115966797,"y":-25.060400009155275,"z":24.207399368286134,"w":0.0},"C":"UnityEngine.Transform"},{"N":"localScale","P":"","O":{"x":1.0,"y":1.0,"z":1.0,"w":0.0},"C":"UnityEngine.Transform"},{"N":"m_Enabled","P":"","O":{"x":1.0,"y":0.0,"z":0.0,"w":0.0},"C":"UnityEngine.BoxCollider"},{"N":"m_IsActive","P":"GameObject","O":{"x":0.0,"y":0.0,"z":0.0,"w":0.0},"C":"UnityEngine.GameObject"}]},{"Id":"d19f47d1-d953-4589-9091-d5f689854942","StateName":"Green","Time":0.10000000149011612,"Properties":[{"N":"localPosition","P":"","O":{"x":-1.1200000047683716,"y":0.0,"z":-0.7900000214576721,"w":0.0},"C":"UnityEngine.Transform"},{"N":"eulerAngles","P":"","O":{"x":23.027099609375,"y":-17.879499435424806,"z":-61.52079772949219,"w":0.0},"C":"UnityEngine.Transform"},{"N":"localScale","P":"","O":{"x":0.8957887887954712,"y":0.8957889676094055,"z":0.8957889676094055,"w":0.0},"C":"UnityEngine.Transform"},{"N":"m_Enabled","P":"","O":{"x":0.0,"y":0.0,"z":0.0,"w":0.0},"C":"UnityEngine.BoxCollider"},{"N":"m_IsActive","P":"GameObject","O":{"x":1.0,"y":0.0,"z":0.0,"w":0.0},"C":"UnityEngine.GameObject"}]},{"Id":"01cda299-1105-4df6-a446-84c0901572f1","StateName":"Blue","Time":0.20000000298023225,"Properties":[{"N":"localPosition","P":"","O":{"x":-0.2549999952316284,"y":0.0,"z":1.753000020980835,"w":0.0},"C":"UnityEngine.Transform"},{"N":"eulerAngles","P":"","O":{"x":-39.8489990234375,"y":0.0,"z":0.0,"w":0.0},"C":"UnityEngine.Transform"},{"N":"localScale","P":"","O":{"x":1.5657647848129273,"y":1.5657646656036378,"z":1.5657646656036378,"w":0.0},"C":"UnityEngine.Transform"},{"N":"m_Enabled","P":"","O":{"x":1.0,"y":0.0,"z":0.0,"w":0.0},"C":"UnityEngine.BoxCollider"},{"N":"m_IsActive","P":"GameObject","O":{"x":0.0,"y":0.0,"z":0.0,"w":0.0},"C":"UnityEngine.GameObject"}]}]}]}'

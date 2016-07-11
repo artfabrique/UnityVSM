@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Assets.VSM.Scripts;
 using DG.Tweening;
 using UnityEngine;
 
@@ -11,19 +10,23 @@ namespace Revenga.VSM
         public List<ViewStateController> TestStateController;
 
 
-        private void Update()
+        void OnEnable()
         {
-            if (TestStateController.Count == 0)
+            if (TestStateController==null || TestStateController.Count == 0)
             {
+                TestStateController = new List<ViewStateController>();
                 TestStateController = FindObjectsOfType<ViewStateController>().ToList();
             }
+        }
 
+        private void Update()
+        {
             if (Input.GetKeyDown(KeyCode.Alpha1))
             {
                 //Debug.Log("0");
                 foreach (var controller in TestStateController)
                 {
-                    controller.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.Bl.ToString(), 10, Ease.OutExpo);
+                    controller.SwitchIntoState(VSM_ExampleCube.Managers.VSM_ExampleCube_Test.ToString(), VSM_ExampleCube.VSM_ExampleCube_Test.Red.ToString(), 10, Ease.OutExpo);
                 }
             }
             else if (Input.GetKeyDown(KeyCode.Alpha2))
@@ -31,7 +34,7 @@ namespace Revenga.VSM
                 //Debug.Log("1");
                 foreach (var controller in TestStateController)
                 {
-                    controller.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.G.ToString(), 10, Ease.OutExpo);
+                    controller.SwitchIntoState(VSM_ExampleCube.Managers.VSM_ExampleCube_Test.ToString(), VSM_ExampleCube.VSM_ExampleCube_Test.Green.ToString(), 10, Ease.OutExpo);
                 }
             }
             else if (Input.GetKeyDown(KeyCode.Alpha3))
@@ -39,7 +42,7 @@ namespace Revenga.VSM
                 //Debug.Log("2");
                 foreach (var controller in TestStateController)
                 {
-                    controller.SwitchIntoState(VSM_Directional_Light.Managers.VSM_Directional_Light_ColorPos.ToString(), VSM_Directional_Light.VSM_Directional_Light_ColorPos.Red.ToString(), 10, Ease.OutExpo);
+                    controller.SwitchIntoState(VSM_ExampleCube.Managers.VSM_ExampleCube_Test.ToString(), VSM_ExampleCube.VSM_ExampleCube_Test.Blue.ToString(), 10, Ease.OutExpo);
                 }
             }
         }

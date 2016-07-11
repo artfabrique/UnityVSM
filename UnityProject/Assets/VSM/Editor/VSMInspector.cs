@@ -57,6 +57,7 @@ namespace Revenga.VSM
                 _animator = _controller.gameObject.AddComponent<Animator>();
                 Debug.Log("VSM: No Animator component. Adding one...");
             }
+            _animator.Rebind();
             _animatorController = _animator.runtimeAnimatorController as AnimatorController;
             _controller.ParseData();
 
@@ -579,7 +580,10 @@ namespace Revenga.VSM
                 if (curve.keys.Any(x=>Math.Abs(x.time - state.Time) < float.Epsilon))
                 {
                     var propertyName = binding.propertyName.TrimStart('m', '_');
-                    propertyName = propertyName.Substring(0, propertyName.IndexOf(".", StringComparison.Ordinal));
+                    if (propertyName.Contains('.'))
+                    {
+                        propertyName = propertyName.Substring(0, propertyName.IndexOf(".", StringComparison.Ordinal));
+                    }
 
                     var property = state.Properties.FirstOrDefault(p => p.N == propertyName) ?? new VSMStateProperty {P = binding.path};
 
@@ -597,12 +601,16 @@ namespace Revenga.VSM
                         
                         var existingProperty = state.Properties.FirstOrDefault(x => x.N == property.N);
                         if (existingProperty != null) property = existingProperty;
-
+                        if (targetObj == null)
+                        {
+                            Debug.LogWarning(string.Format("VSM: Error: Can not resolve target objet. Curve {0} is missing here..", binding.path+"."+binding.propertyName));
+                            continue;
+                        }
                         Type componentType = targetObj.GetType();
                         MemberInfo member = componentType.GetMember(tmpName).FirstOrDefault();
                         if (member == null)
                         {
-                            Debug.LogError("Member not found" + propertyName);
+                            Debug.LogError("Member not found: " + propertyName);
                             continue;
                         }
 
