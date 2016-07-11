@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
-using DG.Tweening;
-using Revenga.VSM;
 using UnityEngine;
 
 namespace Revenga.VSM

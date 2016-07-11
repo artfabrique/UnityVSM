@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using DG.Tweening;
-using DG.Tweening.Core;
 using UnityEngine;
 
 namespace Revenga.VSM
@@ -20,6 +19,7 @@ namespace Revenga.VSM
         private Animator _animatorRef;
         private bool _wasEnabled;
         private readonly Dictionary<string, Component> _components = new Dictionary<string, Component>(); 
+        private readonly Dictionary<string, GameObject> _gameObjects = new Dictionary<string, GameObject>(); 
 
         public void ParseData()
         {
@@ -42,37 +42,57 @@ namespace Revenga.VSM
                 {
                     foreach (VSMStateProperty property in state.Properties)
                     {
-                        var path = property.P + property.C;
-
-                        Component tmpC;
-                        _components.TryGetValue(path, out tmpC);
-                        if(tmpC != null) continue;
-
-                        var tmpTr = gameObject.transform.FindChild(property.P);
-                        if (tmpTr == null)
+                        var tweenTargetType = TryToSearchAndSaveTweenTarget(property.P, property.C);
+                        if (tweenTargetType == TweenTargetType.None)
                         {
-                            Debug.LogWarning(property.P + " not found ");
-                            continue;
+                            Debug.LogError("Neither GameObject or Component found with path " + property.P + " and name " + property.C);
                         }
-
-                        var tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);
-                        if (tmpType == null)
-                        {
-                            Debug.LogWarning("Component " + property.C + " not found on " + property.P);
-                            continue;
-                        }
-
-                        tmpC = tmpTr.gameObject.GetComponent(tmpType);
-                        if (tmpC == null)
-                        {
-                            Debug.LogWarning("Component " + property.C + " not found on " + property.P);
-                            continue;
-                        }
-
-                        _components.Add(path, tmpC);
                     }
                 }
             }
+        }
+
+        private TweenTargetType TryToSearchAndSaveTweenTarget(string path, string componentName)
+        {
+            var pathFull = path + componentName;
+
+            Component tmpC;
+            _components.TryGetValue(pathFull, out tmpC);
+            if (tmpC != null) return TweenTargetType.Component;
+
+            GameObject go;
+            _gameObjects.TryGetValue(pathFull, out go);
+            if (go != null) return TweenTargetType.GameObject;
+
+            var tmpTr = gameObject.transform.FindChild(path);
+            if (tmpTr == null)
+            {
+                Debug.LogWarning(path + " not found ");
+                return TweenTargetType.None;
+            }
+
+            var tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(componentName);
+            if (tmpType == null)
+            {
+                Debug.LogWarning("Component " + componentName + " not found on " + path);
+                return TweenTargetType.None;
+            }
+
+            if (tmpType == typeof(GameObject))
+            {
+                _gameObjects.Add(pathFull, tmpTr.gameObject);
+                return TweenTargetType.GameObject;
+            }
+
+            tmpC = tmpTr.gameObject.GetComponent(tmpType);
+            if (tmpC == null)
+            {
+                Debug.LogWarning("Component " + componentName + " not found on " + path);
+                return TweenTargetType.None;
+            }
+
+            _components.Add(pathFull, tmpC);
+            return TweenTargetType.Component;
         }
 
         public void SwitchIntoState(string managerName, string stateName, float time, Ease ease)
@@ -120,34 +140,28 @@ namespace Revenga.VSM
                     foreach (VSMStateProperty property in targetState.Properties)
                     {
                         var path = property.P + property.C;
-
-                        Component tmpC;
-                        _components.TryGetValue(path, out tmpC);
-                        if (tmpC == null)
+                        
+                        var tweenTargetType = TryToSearchAndSaveTweenTarget(property.P, property.C);
+                        if (tweenTargetType == TweenTargetType.None)
                         {
-                            var tmpTr = gameObject.transform.FindChild(property.P);
-                            if (tmpTr == null)
-                            {
-                                Debug.LogWarning(property.P + " not found ");
-                                continue;
-                            }
-
-                            var tmpType = AssemblyUtils.FindTypeFromLoadedAssemblies(property.C);
-                            if (tmpType == null)
-                            {
-                                Debug.LogWarning("Component " + property.C + " not found on " + property.P);
-                                continue;
-                            }
-
-                            tmpC = tmpTr.gameObject.GetComponent(tmpType);
-                            if (tmpC == null)
-                            {
-                                Debug.LogWarning("Component " + property.C + " not found on " + property.P);
-                                continue;
-                            }
+                            Debug.LogError("Neither GameObject or Component found with path " + property.P + " and name " + property.C);
+                            continue;
                         }
 
-                        Tween(tmpC, property.N, property.O, time, ease);
+                        switch (tweenTargetType)
+                        {
+                            case TweenTargetType.None:
+                                Debug.LogError("Neither GameObject or Component found with path " + property.P + " and name " + property.C);
+                                continue;
+
+                            case TweenTargetType.Component:
+                                Tween(_components[path], property.N, property.O, time, ease);
+                                break;
+
+                            case TweenTargetType.GameObject:
+                                Tween(_gameObjects[path], property.N, property.O, time, ease);
+                                break;
+                        }
                     }
                 }
             }
@@ -180,10 +194,7 @@ namespace Revenga.VSM
             }
         }
 
-        protected void OnDestroy()
-        {
-            
-        }
+        protected void OnDestroy() { }
 
         public void Tween(Component component, string property, Vector4 value, float tweenTime, Ease ease)
         {
@@ -206,14 +217,17 @@ namespace Revenga.VSM
 
             switch (methods.Type)
             {
-                case "float":
+                case "Boolean":
+                    UIReflectionSystem.Setter(component, methods, Convert.ToBoolean(value.x));
+                    break;
+
+                case "Single":
                     DOTween
                         .To(() => UIReflectionSystem.Getter<float>(component, methods),
                             newValue => UIReflectionSystem.Setter(component, methods, newValue),
                             value.x,
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 case "double":
@@ -222,8 +236,7 @@ namespace Revenga.VSM
                             newValue => UIReflectionSystem.Setter(component, methods, newValue),
                             value.x,
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 case "int":
@@ -232,8 +245,7 @@ namespace Revenga.VSM
                             newValue => UIReflectionSystem.Setter(component, methods, newValue),
                             (int)value.x,
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 case "uint":
@@ -242,8 +254,7 @@ namespace Revenga.VSM
                             newValue => UIReflectionSystem.Setter(component, methods, newValue),
                             (uint)value.x,
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 case "long":
@@ -252,8 +263,7 @@ namespace Revenga.VSM
                             newValue => UIReflectionSystem.Setter(component, methods, newValue),
                             (long)value.x,
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 case "ulong":
@@ -262,8 +272,7 @@ namespace Revenga.VSM
                             newValue => UIReflectionSystem.Setter(component, methods, newValue),
                             (ulong)value.x,
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 case "Vector2":
@@ -272,8 +281,7 @@ namespace Revenga.VSM
                             newValue => UIReflectionSystem.Setter<Vector2>(component, methods, newValue),    // Explicit generic cast is important!
                             value,
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 case "Vector3":
@@ -282,8 +290,7 @@ namespace Revenga.VSM
                             newValue => UIReflectionSystem.Setter<Vector3>(component, methods, newValue),    // Explicit generic cast is important!
                             value,
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 case "Vector4":
@@ -292,8 +299,7 @@ namespace Revenga.VSM
                             newValue => UIReflectionSystem.Setter<Vector4>(component, methods, newValue),    // Explicit generic cast is important!
                             value,
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 case "Rect":
@@ -302,8 +308,7 @@ namespace Revenga.VSM
                             newValue => UIReflectionSystem.Setter(component, methods, newValue),
                             new Rect(value.x, value.y, value.z, value.w),
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 case "RectOffset":
@@ -312,8 +317,7 @@ namespace Revenga.VSM
                             newValue => UIReflectionSystem.Setter(component, methods, newValue),
                             new RectOffset((int)value.x, (int)value.y, (int)value.z, (int)value.w),
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 case "Color":
@@ -322,19 +326,24 @@ namespace Revenga.VSM
                             newValue => UIReflectionSystem.Setter<Color>(component, methods, newValue),    // Explicit generic cast is important!
                             value,
                             tweenTime)
-                        .SetEase(ease)
-                        .SetAutoKill(false).SetId(tmpTweenId).SetRecyclable();
+                        .TweenParams(ease, tmpTweenId);
                     break;
 
                 default:
-                    UIReflectionSystem.Setter<Color>(component, methods, value);
                     Debug.LogError(methods.Type + " type is not suported.");
                     return;
-
             }
         }
 
-
+        public void Tween(GameObject go, string property, Vector4 value, float tweenTime, Ease ease)
+        {
+            switch (property)
+            {
+                case "isActive":
+                    go.SetActive(Convert.ToBoolean(value.x));
+                    break;
+            }
+        }
 
         protected void OnDisable()
         {
@@ -381,4 +390,18 @@ namespace Revenga.VSM
         public const string DataParsedSuccessfully =
             "VSM: Data has been successfully parsed! \nName: {0} \nTotal managers: {1}";
     }
+
+    public static class ViewStateControllerHelper
+    {
+        public static void TweenParams(this Tween tween, Ease ease, string tmpTweenId)
+        {
+            tween
+                .SetEase(ease)
+                .SetAutoKill(false)
+                .SetId(tmpTweenId)
+                .SetRecyclable();
+        }
+    }
+
+    public enum TweenTargetType { None = 0, Component, GameObject }
 }

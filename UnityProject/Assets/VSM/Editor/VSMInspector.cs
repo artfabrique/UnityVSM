@@ -579,7 +579,16 @@ namespace Revenga.VSM
                 
                 if (curve.keys.Any(x=>Math.Abs(x.time - state.Time) < float.Epsilon))
                 {
-                    var propertyName = binding.propertyName.TrimStart('m', '_');
+                    var propertyName = binding.propertyName;
+                    if (propertyName.StartsWith("m_"))
+                    {
+                        propertyName = char.ToLowerInvariant(propertyName[2]) + propertyName.Substring(3);
+                    }
+                    else if (propertyName.StartsWith("_"))
+                    {
+                        propertyName = char.ToUpperInvariant(propertyName[1]) + propertyName.Substring(2);
+                    }
+
                     if (propertyName.Contains('.'))
                     {
                         propertyName = propertyName.Substring(0, propertyName.IndexOf(".", StringComparison.Ordinal));
@@ -595,7 +604,7 @@ namespace Revenga.VSM
                         UnityEngine.Object targetObj = AnimationUtility.GetAnimatedObject(_controller.gameObject, binding);
                         
                         var fieldName = binding.propertyName.Substring(binding.propertyName.IndexOf(".", StringComparison.Ordinal) + 1);
-                        var tmpName = char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1);
+                        var tmpName = propertyName;
                         if (tmpName == "localEulerAnglesRaw") tmpName = "eulerAngles";
                         property.N = tmpName;
                         
@@ -662,7 +671,7 @@ namespace Revenga.VSM
                     }
                     else
                     {
-                        property.N = binding.propertyName;
+                        property.N = propertyName;
                         property.O = new Vector4(stateKey.value, 0);
                     }
                     

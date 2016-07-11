@@ -93,6 +93,7 @@ GameObject:
   serializedVersion: 4
   m_Component:
   - 4: {fileID: 918825279}
+  - 114: {fileID: 918825280}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
@@ -113,6 +114,24 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1718717687}
   m_RootOrder: 0
+--- !u!114 &918825280
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 918825278}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e026908c4c46a14d80acb6b9225e745, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _test: -39.47
+  _testbool: 0
+  _testdouble: 0.63
+  _testint: 20
+  _testuint: 42
+  _testlong: 34
+  _testulong: 43
 --- !u!1 &1384341764
 GameObject:
   m_ObjectHideFlags: 0
@@ -287,7 +306,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -8.9734, y: -25.0604, z: 24.2074}
   m_Children:
   - {fileID: 918825279}
   m_Father: {fileID: 0}
